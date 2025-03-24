@@ -954,9 +954,6 @@ class WheelTorqueAllocation(ModelParameters, Common):
         model.cost_expr_ext_cost_e = y_e.T @ scipy.linalg.block_diag( self.Q_wheel_rate ) @ y_e
         ###
 
-        print("TEST 2: ", model.cost_expr_ext_cost_0.is_scalar())
-        print("TEST 3: ", model.cost_expr_ext_cost.is_scalar())
-
         #   Call dims instance
         dims = AcadosOcpDims()
 

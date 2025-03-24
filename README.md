@@ -1,1 +1,1 @@
-# thesis_ws
+# MSc thesis code
