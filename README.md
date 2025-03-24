@@ -14,4 +14,4 @@ This repo contains the code that supports the development of a master thesis on 
 
 ##  Main results (to be updated)
 
-![Screenshot of a comment on a GitHub issue showing an image, added in the Markdown, of an Octocat smiling and raising a tentacle.](../github/Figures/potentialFlow+mapRefinement+Points+0.9+0.2.pdf)
+![Screenshot of a comment on a GitHub issue showing an image, added in the Markdown, of an Octocat smiling and raising a tentacle.](../github/mscthesis_pdf/Figures/potentialFlow+mapRefinement+Points+0.9+0.2.pdf)
