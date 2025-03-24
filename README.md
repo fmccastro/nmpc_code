@@ -7,7 +7,7 @@ This repo contains the code that supports the development of a master thesis on 
 2. Rodrigo Ventura (supervisor)
 
 ##	Content
-1. [nmpc_applications] (https://github.com/fmccastro/nmpc_code/tree/e8f5333dbb2cd314b467cad49bbd68ebdd4cfb32/nmpc_applications) : location of ROS nodes and python classes
+1. nmpc_applications : location of ROS nodes and python classes
 2. nmpc_bringup : location of launch files
 3. nmpc_description : location of URDF files that define the mobile robot
 4. nmpc_gazebo : location of heightmap files to render in Gazebo 11.
