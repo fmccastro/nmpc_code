@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <include file = "$(find thesis_main)/launch/spawn_sdf.launch">
+        <arg name = "robot_name" value = "husky" />
+        <arg name = "x" value = "0.0" />
+        <arg name = "y" value = "0.0" />
+        <arg name = "z" value = "3.0" />
+        <arg name = "roll" value = "0.0" />
+        <arg name = "pitch" value = "0.0" />
+        <arg name = "yaw" value = "0.0" />
+        <arg name = "sdf_robot_file" value = "$(find thesis_main)/models/Clearpath_Robotics_Husky_A200/model.sdf" />
+    </include>
+</launch>

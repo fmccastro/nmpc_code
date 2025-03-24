@@ -1,0 +1,21 @@
+# Publish all joint states -------------------------------------------------
+joint_state_controller:
+  type: joint_state_controller/JointStateController
+  publish_rate: 50
+
+# Wheel torque controllers -------------------------------------------------
+back_left_wheel_plant:
+  type: effort_controllers/JointEffortController
+  joint: back_left_wheel_joint
+  
+front_left_wheel_plant:
+  type: effort_controllers/JointEffortController
+  joint: front_left_wheel_joint
+
+back_right_wheel_plant:
+  type: effort_controllers/JointEffortController
+  joint: back_right_wheel_joint
+
+front_right_wheel_plant:
+  type: effort_controllers/JointEffortController
+  joint: front_right_wheel_joint

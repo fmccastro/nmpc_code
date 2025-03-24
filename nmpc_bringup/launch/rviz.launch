@@ -1,0 +1,3 @@
+<launch>
+    <node name = "rviz" pkg = "rviz" type = "rviz" args = "-d $(find thesis_main)/robots/urdf/pioneer3at_rvizconfig.rviz -f base_link" required = "true" />
+</launch>

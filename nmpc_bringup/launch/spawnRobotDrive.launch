@@ -1,0 +1,93 @@
+<launch>
+
+  <!--
+        Spawn wheeled mobile robot with wheel torque transmission actuators
+  -->
+  
+  <env name="GAZEBO_MODEL_PATH" value="$GAZEBO_MODEL_PATH:$(find nmpc_gazebo)/models" />
+  <env name="GAZEBO_RESOURCE_PATH" value="$GAZEBO_RESOURCE_PATH:$(find nmpc_gazebo)/models" />
+
+  <!--  Set mobile robot initial pose -->
+  <arg name = "x" value = "-10.0" />
+  <arg name = "y" value = "-15.0" />
+  <arg name = "z" value = "2.0" />
+  <arg name = "roll" value = "0.0" />
+  <arg name = "pitch" value = "0.0" />
+  <arg name = "yaw" value = "0.0" />
+
+  <!--  Set control type (traction or velocity) -->
+  <arg name = "teleoperation_mode" value = "false" />
+  <arg name = "traction_ctrl" value = "false" />
+  
+  <!--  Define options  -->
+  <arg name = "paused"                     default = "false"/>
+  <arg name = "use_sim_time"               default = "true"/>
+  <arg name = "gui"                        default = "true"/>
+  <arg name = "use_gui"                    default = "false"/>
+  <arg name = "JSP_gui"                    default = "true"/>
+  <arg name = "headless"                   default = "false"/>
+  <arg name = "debug"                      default = "false"/>
+  <arg name = "verbose"                    default = "true"/>
+  <arg name = "world"                      default = "$(find nmpc_gazebo)/worlds/moon_dem.world" />
+
+  <arg name = "urdf" value = "$(find nmpc_description)/robots/pioneer3at/urdf/pioneer3at.urdf"/>
+
+  <!-- set use_sim_time flag -->
+  <group if="$(arg use_sim_time)">
+    <param name="/use_sim_time" value="true" />
+  </group>
+  
+  <!-- set command arguments -->
+  <arg unless="$(arg paused)" name="command_arg1" value=""/>
+  <arg     if="$(arg paused)" name="command_arg1" value="-u"/>
+  <arg unless="$(arg headless)" name="command_arg2" value=""/>
+  <arg     if="$(arg headless)" name="command_arg2" value="-r"/>
+  <arg unless="$(arg verbose)" name="command_arg3" value=""/>
+  <arg     if="$(arg verbose)" name="command_arg3" value="--verbose"/>
+  <arg unless="$(arg debug)" name="script_type" value="gzserver"/>
+  <arg     if="$(arg debug)" name="script_type" value="debug"/>
+  
+  <param name = "robot_description" command="$(find xacro)/xacro $(arg urdf)" />
+  <param name = "traction_control" value= "$(arg traction_ctrl)"/>
+  <param name = "manual_control" value = "$(arg teleoperation_mode)" />
+
+  <!--<rosparam file = "$(find thesis_main)/config/wheel_rate_control.yaml" command = "load"/>-->
+
+  <!-- spawn robot -->
+  <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" respawn = "false" output="screen"
+        args="-param robot_description -urdf -x $(arg x) -y $(arg y) -z $(arg z) -Y $(arg yaw) -R $(arg roll) -P $(arg pitch) -model vehicle" />
+
+  <!-- load controllers -->
+  <!--<node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen"
+          args="back_left_wheel_plant
+                front_left_wheel_plant
+                back_right_wheel_plant
+                front_right_wheel_plant
+                joint_state_controller"/>-->
+  
+  <!-- convert joint states to TF transforms for rviz, etc -->
+  <!--<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen" />-->
+
+  <!--  start rviz -->
+  <!--<node name="rviz" pkg="rviz" type="rviz" args = "-d $(find thesis_main)/rviz/husky.rviz" />-->
+  
+  <!-- start gazebo server -->
+  <node name="gazebo" pkg="gazebo_ros" type="$(arg script_type)" respawn="false" output="screen" args="$(arg command_arg1) $(arg command_arg2) $(arg command_arg3) $(arg world)" />
+  
+  <!-- start gazebo client -->
+  <group if="$(arg gui)">
+    <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" respawn="false" output="screen"/>
+  </group>
+
+  <!-- launch nodes.launch -->
+  <!--<include file="$(find thesis_main)/launch/nodes.launch" >
+    <arg name = "traction_ctrl"  value = "$(arg traction_ctrl)" />
+    <arg name = "teleoperation_mode" value = "$(arg teleoperation_mode)" />
+  </include>-->
+
+  <!-- East North Up frame -->
+  <!--<arg name="pi" value="3.14159265359" />
+  <arg name="ned_frame" value="0.0 0.0 0.0 0.0 0.0 $(arg pi)" />
+  <node pkg="tf2_ros" type="static_transform_publisher" name="ned_base_frame_tf" args="$(arg ned_frame) base_link base_link_ned" />-->
+
+</launch>    
