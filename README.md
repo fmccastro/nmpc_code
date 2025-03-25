@@ -13,9 +13,11 @@ This repo contains the code that supports the development of a master thesis on 
 4. [nmpc_gazebo](https://github.com/fmccastro/nmpc_code/tree/8ab37a864867297aaf7e6ecfd55b73b3ce023acb/nmpc_gazebo): location of heightmap files to render in Gazebo 11.
 
 ##  Main results (to be updated)
+1. Generation of traversability maps
 ![Example of traversability map generated with optimization methods (namely ipopt).](https://github.com/fmccastro/mscthesis_pdf/blob/7b91f8b9ee3b3ccbd17daf7faa5a1f8c68620eb5/Figures/mapRefinement%2BPoints%2B0.9%2B0.2%2B1.png)
 
-![Example of potential flow generated with the Eikonal equation.](https://github.com/fmccastro/mscthesis_pdf/blob/7b91f8b9ee3b3ccbd17daf7faa5a1f8c68620eb5/Figures/potentialFlow%2BmapRefinement%2BPoints%2B0.9%2B0.2.pdf)
-)
+2. Generation of potential flows by applying the Eikonal equation (solution computed with ![skfmm](https://github.com/scikit-fmm/scikit-fmm.git))
 
-![Comparison among paths generated with different types of maps.](https://github.com/fmccastro/mscthesis_pdf/blob/7b91f8b9ee3b3ccbd17daf7faa5a1f8c68620eb5/Figures/comparisonOfPaths.pdf)
+	-![Example of potential flow generated with the Eikonal equation.](https://github.com/fmccastro/mscthesis_pdf/blob/7b91f8b9ee3b3ccbd17daf7faa5a1f8c68620eb5/Figures/potentialFlow%2BmapRefinement%2BPoints%2B0.9%2B0.2.pdf)
+)
+	-![Comparison among paths generated with different types of maps.](https://github.com/fmccastro/mscthesis_pdf/blob/7b91f8b9ee3b3ccbd17daf7faa5a1f8c68620eb5/Figures/comparisonOfPaths.pdf)
