@@ -14,17 +14,22 @@ bag_file = lower_directory / "niu_1.bag"
 time = []
 vx = []
 tau = []
+w_bl = []
 
 with rosbag.Bag(bag_file, 'r') as bag:
     for topic, msg, t in bag.read_messages():
         time += [t]
 
-        if( topic == "/vehicle/true_velocity_bodyFrame" ):
+        if( topic == "/record_data/velocity_bodyFrame" ):
             vx += [msg.velocity[0].linear.x]
         
-        if( topic == "/back_left_wheel_plant/command" ):
+        if( topic == "/record_data/torque_bl" ):
             tau += [msg.data]
+
+        if( topic == '/record_data/jointState' ):
+            w_bl += [msg.velocity[0]]
 
 plt.plot(tau, 'r')
 plt.plot(vx, 'k')
+plt.plot(w_bl, 'g')
 plt.show()

@@ -1,5 +1,5 @@
 #!/usr/bin/python3.8
-import ctypes, rospy, pygame, time, math, sys, scipy, matplotlib, skfmm, signal, subprocess, os, pickle, json, tf2_ros
+import ctypes, rospy, pygame, time, math, sys, scipy, matplotlib, skfmm, signal, subprocess, os, pickle, json, tf2_ros, rosbag
 
 #   ROS1 Messages
 from geometry_msgs.msg import Twist
