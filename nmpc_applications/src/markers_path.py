@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-
 from pathlib import Path
 
 classes_path = Path(__file__)

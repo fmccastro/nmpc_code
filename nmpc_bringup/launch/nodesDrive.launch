@@ -1,10 +1,7 @@
 <?xml version="1.0" ?>
 <launch>
 
-  <node name = "wheelKinematics" pkg = "thesis_main" type = "wheelKinematics.py" output = "screen" />
-  <node name = "poseConverter" pkg = "thesis_main" type = "poseConverter.py" output = "screen" />
-  <!--<node name = "wheelTorqueActuator"  pkg = "thesis_main" type = "wheelTorqueActuator.py" output = "screen" />-->
-  <node name = "manualControl" pkg = "thesis_main" type = "manualControl.py" output = "screen" />
-  <node name = "reactionForces_wheelFrame"  pkg = "thesis_main" type = "reactionForces_wheelFrame.py" output = "screen" />
+  <node name = "wheelKinematics" pkg = "nmpc_applications" type = "wheelKinematics.py" output = "screen" />
+  <node name = "poseConverter" pkg = "nmpc_applications" type = "poseConverter.py" output = "screen" />
   
 </launch>

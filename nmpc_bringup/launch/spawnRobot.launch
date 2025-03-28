@@ -4,7 +4,7 @@
   <env name="GAZEBO_RESOURCE_PATH" value="$GAZEBO_RESOURCE_PATH:$(find nmpc_gazebo)/models" />
 
   <!--  Set mobile robot initial pose -->
-  <arg name = "x" value = "-9.0" />
+  <arg name = "x" value = "-9.5" />
   <arg name = "y" value = "-15.0" />
   <arg name = "z" value = "1.5" />
   <arg name = "roll" value = "0.0" />
@@ -25,7 +25,7 @@
   <arg name = "headless"                   default = "false"/>
   <arg name = "debug"                      default = "false"/>
   <arg name = "verbose"                    default = "true"/>
-  <arg name = "world"                      default = "$(find nmpc_gazebo)/worlds/moon_dem.world" />
+  <arg name = "world"                      default = "$(find nmpc_gazebo)/worlds/empty.world" />
 
   <arg name = "urdf" value = "$(find nmpc_description)/robots/pioneer3at/urdf/pioneer3at.urdf"/>
 
@@ -46,7 +46,7 @@
   
   <param name = "robot_description" command="$(find xacro)/xacro $(arg urdf)" />
 
-  <rosparam file = "$(find nmpc_bringup)/config/wheel_rate_control.yaml" command = "load"/>
+  <rosparam file = "$(find nmpc_bringup)/config/wheel_torque_control.yaml" command = "load"/>
 
   <!-- Load joint controller configurations from YAML file to parameter server -->
   <!--<group if = "$(arg teleoperation_mode)" >
