@@ -18,7 +18,7 @@ This first teleoperation node controls wheel torques, whereas this second [teleo
 
 
 
-[![Teleoperation video demonstration](https://raw.githubusercontent.com/fmccastro/nmpc_code/master/assets/thumbnail.jpg)](https://youtu.be/Sgt95OHfLIY)
+[![Wheel torque teleoperation video demonstration](https://raw.githubusercontent.com/fmccastro/nmpc_code/master/assets/thumbnail.jpg)](https://youtu.be/Sgt95OHfLIY)
 
 ##  Main results (to be updated)
 1. Generation of traversability maps
