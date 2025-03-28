@@ -12,6 +12,9 @@ This repo contains the code that supports the development of a master thesis on 
 3. [nmpc_description](https://github.com/fmccastro/nmpc_code/tree/8ab37a864867297aaf7e6ecfd55b73b3ce023acb/nmpc_description): location of URDF files that define the mobile robot
 4. [nmpc_gazebo](https://github.com/fmccastro/nmpc_code/tree/8ab37a864867297aaf7e6ecfd55b73b3ce023acb/nmpc_gazebo): location of heightmap files to render in Gazebo 11.
 
+##	Teleoperation node
+A teleoperation node for the [mobile robot]() is coded [here](https://github.com/fmccastro/nmpc_code/blob/913261a1084ce2b29de2d6007a0622224d8becd1/nmpc_applications/src/mouse_joy_wheelTorques.py). You can take the code and adjust to your needs. This approach allow you to easily teleoperate a wheeled mobile robot from a pyGame Gui by mouse control, resembling a joystick.
+
 ##  Main results (to be updated)
 1. Generation of traversability maps
 ![Example of traversability map generated with optimization methods (namely ipopt).](https://github.com/fmccastro/mscthesis_pdf/blob/7b91f8b9ee3b3ccbd17daf7faa5a1f8c68620eb5/Figures/mapRefinement%2BPoints%2B0.9%2B0.2%2B1.png)
