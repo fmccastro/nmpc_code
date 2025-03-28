@@ -201,8 +201,8 @@ int wheel_force_allocation_acados_sim_create(wheel_force_allocation_sim_solver_c
 
     /* initialize input */
     // x
-    double x0[8];
-    for (int ii = 0; ii < 8; ii++)
+    double x0[4];
+    for (int ii = 0; ii < 4; ii++)
         x0[ii] = 0.0;
 
     sim_in_set(wheel_force_allocation_sim_config, wheel_force_allocation_sim_dims,
@@ -218,11 +218,11 @@ int wheel_force_allocation_acados_sim_create(wheel_force_allocation_sim_solver_c
                wheel_force_allocation_sim_in, "u", u0);
 
     // S_forw
-    double S_forw[112];
-    for (int ii = 0; ii < 112; ii++)
+    double S_forw[40];
+    for (int ii = 0; ii < 40; ii++)
         S_forw[ii] = 0.0;
-    for (int ii = 0; ii < 8; ii++)
-        S_forw[ii + ii * 8 ] = 1.0;
+    for (int ii = 0; ii < 4; ii++)
+        S_forw[ii + ii * 4 ] = 1.0;
 
 
     sim_in_set(wheel_force_allocation_sim_config, wheel_force_allocation_sim_dims,

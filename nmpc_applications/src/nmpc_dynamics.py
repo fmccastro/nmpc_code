@@ -163,6 +163,8 @@ if __name__ == '__main__':
                 
                 solutionX, solutionU, next_fx, next_mz = model._solve(currentVelocity, velocity2Follow, path2Follow)
 
+                #print("[" + rospy.get_name() + "] horizon velocity: ", len(solutionX))
+
                 horizonVelocity.data = solutionX
                 horizonForcesMoments.data = solutionU + solutionU[-2:]
 

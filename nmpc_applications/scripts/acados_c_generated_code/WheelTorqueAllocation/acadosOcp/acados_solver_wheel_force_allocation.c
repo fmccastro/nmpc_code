@@ -242,7 +242,7 @@ static ocp_nlp_dims* wheel_force_allocation_acados_create_setup_dimensions(wheel
     nbx[0] = NBX0;
     nsbx[0] = 0;
     ns[0] = NS0;
-    nbxe[0] = 8;
+    nbxe[0] = 4;
     ny[0] = NY0;
     nh[0] = NH0;
     nsh[0] = NSH0;
@@ -541,10 +541,6 @@ void wheel_force_allocation_acados_setup_nlp_in(wheel_force_allocation_solver_ca
     idxbx0[1] = 1;
     idxbx0[2] = 2;
     idxbx0[3] = 3;
-    idxbx0[4] = 4;
-    idxbx0[5] = 5;
-    idxbx0[6] = 6;
-    idxbx0[7] = 7;
 
     double* lubx0 = calloc(2*NBX0, sizeof(double));
     double* lbx0 = lubx0;
@@ -557,15 +553,11 @@ void wheel_force_allocation_acados_setup_nlp_in(wheel_force_allocation_solver_ca
     free(idxbx0);
     free(lubx0);
     // idxbxe_0
-    int* idxbxe_0 = malloc(8 * sizeof(int));
+    int* idxbxe_0 = malloc(4 * sizeof(int));
     idxbxe_0[0] = 0;
     idxbxe_0[1] = 1;
     idxbxe_0[2] = 2;
     idxbxe_0[3] = 3;
-    idxbxe_0[4] = 4;
-    idxbxe_0[5] = 5;
-    idxbxe_0[6] = 6;
-    idxbxe_0[7] = 7;
     ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, 0, "idxbxe", idxbxe_0);
     free(idxbxe_0);
 
@@ -615,6 +607,27 @@ void wheel_force_allocation_acados_setup_nlp_in(wheel_force_allocation_solver_ca
 
 
 
+    // set up general constraints for stage 0 to N-1
+    double* D = calloc(NG*NU, sizeof(double));
+    double* C = calloc(NG*NX, sizeof(double));
+    double* lug = calloc(2*NG, sizeof(double));
+    double* lg = lug;
+    double* ug = lug + NG;
+    C[0+NG * 0] = 1;
+    C[0+NG * 1] = -1;
+    C[1+NG * 2] = 1;
+    C[1+NG * 3] = -1;
+
+    for (int i = 0; i < N; i++)
+    {
+        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, i, "D", D);
+        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, i, "C", C);
+        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, i, "lg", lg);
+        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, i, "ug", ug);
+    }
+    free(D);
+    free(C);
+    free(lug);
 
 
 
@@ -632,6 +645,21 @@ void wheel_force_allocation_acados_setup_nlp_in(wheel_force_allocation_solver_ca
 
 
 
+    // set up general constraints for last stage
+    double* C_e = calloc(NGN*NX, sizeof(double));
+    double* lug_e = calloc(2*NGN, sizeof(double));
+    double* lg_e = lug_e;
+    double* ug_e = lug_e + NGN;
+    C_e[0+NGN * 0] = 1;
+    C_e[0+NGN * 1] = -1;
+    C_e[1+NGN * 2] = 1;
+    C_e[1+NGN * 3] = -1;
+
+    ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, N, "C", C_e);
+    ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, N, "lg", lg_e);
+    ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, N, "ug", ug_e);
+    free(C_e);
+    free(lug_e);
 
 
 }

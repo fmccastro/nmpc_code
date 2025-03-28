@@ -194,7 +194,11 @@ class Common:
     m_lb = [-1000, -1000, -1000]
     m_ub = [1000, 1000, 1000]
 
-    #   normal forces limits
+    #   wheel lateral forces limits
+    fy_lb = [-999999.0, -999999.0, -999999.0, -999999.0]
+    fy_ub = [999999.0, 999999.0, 999999.0, 999999.0]
+
+    #   wheel normal forces limits
     fn_lb = [0.0, 0.0, 0.0, 0.0]
     fn_ub = [999999.0, 999999.0, 999999.0, 999999.0]
 
@@ -216,7 +220,7 @@ class Common:
     Q_v = 2 * np.diag( [ 1e0, 1e2, 1e2 ] )                                 
     Q_w = 2 * np.diag( [ 1e-1, 1e-1, 1e0 ] )
     
-    Q_wheel_rate = 2 * np.diag( [0.5e0, 0.5e0, 0.5e0, 0.5e0] )        
+    Q_wheel_rate = 2 * np.diag( [5e-1, 5e-1] )        
 
     #   Forces cost
     Q_f = 2 * np.diag( [1e0, 1e0, 1e0] )                                #   forces cost                 [fx, fy, fz]
@@ -226,6 +230,9 @@ class Common:
 
     #   Wheel torque cost
     Q_torque = 2 * np.diag( [5e0, 5e0] )                                #   wheel torque control cost   [tau_l, tau_r]
+
+    #   Lateral forces cost
+    Q_fy = 2 * np.diag( [1e0, 1e0, 1e0, 1e0] )
 
     #   Normal forces cost
     Q_fn = 2 * np.diag( [1e0, 1e0, 1e0, 1e0] )                          #   Wheel normal forces cost    [fz_bl, fz_fl, fz_br, fz_fr]

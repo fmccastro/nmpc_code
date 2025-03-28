@@ -34,13 +34,14 @@ if __name__ == '__main__':
 
     pub_nodePeriod = rospy.Publisher( '/vehicle/node/nmpc_kinematics/period', Float64, queue_size = 1 )
 
-    pub_horizonWheelRates = rospy.Publisher( '/vehicle/nmpc_dynamics/horizonVelocity', Float32MultiArray, queue_size = 1 )
-    pub_horizonForcesMoments = rospy.Publisher( '/vehicle/nmpc_dynamics/horizonForcesMoments', Float32MultiArray, queue_size = 1 )
+    pub_horizonWheelRates = rospy.Publisher( '/vehicle/nmpc_wheelAllocation/horizonWheelRates', Float32MultiArray, queue_size = 1 )
+    pub_horizonForcesMoments = rospy.Publisher( '/vehicle/nmpc_wheelAllocation/horizonForcesMoments', Float32MultiArray, queue_size = 1 )
 
     pub_command_fz_bl = rospy.Publisher( '/vehicle/nmpc_wheelAllocation/fz_bl', Float32, queue_size = 1 )
     pub_command_fz_fl = rospy.Publisher( '/vehicle/nmpc_wheelAllocation/fz_fl', Float32, queue_size = 1 )
     pub_command_fz_br = rospy.Publisher( '/vehicle/nmpc_wheelAllocation/fz_br', Float32, queue_size = 1 )
     pub_command_fz_fr = rospy.Publisher( '/vehicle/nmpc_wheelAllocation/fz_fr', Float32, queue_size = 1 )
+
     pub_command_torque_l = rospy.Publisher( '/vehicle/nmpc_wheelAllocation/torque_l', Float32, queue_size = 1 )
     pub_command_torque_r = rospy.Publisher( '/vehicle/nmpc_wheelAllocation/torque_r', Float32, queue_size = 1 )
 
@@ -150,28 +151,6 @@ if __name__ == '__main__':
             currentVelocity = common.true_velocity_bodyFrame.velocity[0]
             currentJointStates = common.jointStates.velocity
 
-            if( index == 0 ):
-                dd_w_bl = ( currentJointStates[0] - 0 ) / common.Ts
-                dd_w_fl = ( currentJointStates[1] - 0 ) / common.Ts
-                dd_w_br = ( currentJointStates[2] - 0 ) / common.Ts
-                dd_w_fr = ( currentJointStates[3] - 0 ) / common.Ts
-
-                prev_w_bl = currentJointStates[0]
-                prev_w_fl = currentJointStates[1]
-                prev_w_br = currentJointStates[2]
-                prev_w_fr = currentJointStates[3]
-            
-            elif( index > 0 ):
-                dd_w_bl = ( currentJointStates[0] - prev_w_bl ) / common.Ts
-                dd_w_fl = ( currentJointStates[1] - prev_w_fl ) / common.Ts
-                dd_w_br = ( currentJointStates[2] - prev_w_br ) / common.Ts
-                dd_w_fr = ( currentJointStates[3] - prev_w_fr ) / common.Ts
-
-                prev_w_bl = currentJointStates[0]
-                prev_w_fl = currentJointStates[1]
-                prev_w_br = currentJointStates[2]
-                prev_w_fr = currentJointStates[3]
-
             #   Check if goal point is achieved in order to break simulation loop
             if( math.dist( [currentPose.x, currentPose.y], common.goalPoint ) <= common.goalCheck ):
                 print("[" + rospy.get_name() + "] Goal point was reached. Simulation ends.")
@@ -182,34 +161,34 @@ if __name__ == '__main__':
                 velocity2Follow = list(common.horizonVelocity.data)
                 forcesMoments2Follow = list(common.horizonForcesMoments.data)
                 
+                #print("[" + rospy.get_name() + "] velocity to follow: ", len(velocity2Follow))
+                
                 if(index == 0):
                     # do some initial iterations to start with a good initial guess
 
                     print("[" + rospy.get_name() + "] Starting initial iterations to find a suitable initial guess.")
                     
-                    model._setInitialGuess(5, list(currentJointStates) + [dd_w_bl, dd_w_fl, dd_w_br, dd_w_fr], path2Follow, velocity2Follow, forcesMoments2Follow)
+                    model._setInitialGuess(5, [currentJointStates[0], currentJointStates[0], currentJointStates[2], currentJointStates[2]], path2Follow, velocity2Follow, forcesMoments2Follow)
 
                     input("[" + rospy.get_name() + "] Wait for input to start simulation cycle.")
+
+                solutionX, solutionU, wheelRates, normalForces, wheelTorques = model._solve( [currentJointStates[0], currentJointStates[2]], path2Follow, velocity2Follow, forcesMoments2Follow)
                 
-                solutionX, solutionU, next_w_bl, next_w_fl, next_w_br, next_w_fr,\
-                next_fz_bl, next_fz_fl, next_fz_br, next_fz_fr, next_torque_l, next_torque_r = model._solve(list(currentJointStates) + [dd_w_bl, dd_w_fl, dd_w_br, dd_w_fr],\
-                                                                                                            path2Follow, velocity2Follow, forcesMoments2Follow)
+                horizonWheelRates.data = solutionX
+                horizonForcesMoments.data = solutionU + solutionU[-6:]
 
-                horizonWheelRates = solutionX
-                horizonForcesMoments = solutionU + solutionU[-6:]
+                pub_backLeftWheelRate.publish(wheelRates[0])
+                pub_frontLeftWheelRate.publish(wheelRates[0])
+                pub_backRightWheelRate.publish(wheelRates[1])
+                pub_frontRightWheelRate.publish(wheelRates[1])
 
-                pub_backLeftWheelRate.publish(next_w_bl)
-                pub_frontLeftWheelRate.publish(next_w_fl)
-                pub_backRightWheelRate.publish(next_w_br)
-                pub_frontRightWheelRate.publish(next_w_fr)
+                pub_command_fz_bl.publish(normalForces[0])
+                pub_command_fz_fl.publish(normalForces[1])
+                pub_command_fz_br.publish(normalForces[2])
+                pub_command_fz_fr.publish(normalForces[3])
 
-                pub_command_fz_bl.publish(next_fz_bl)
-                pub_command_fz_fl.publish(next_fz_fl)
-                pub_command_fz_br.publish(next_fz_br)
-                pub_command_fz_fr.publish(next_fz_fr)
-
-                pub_command_torque_l.publish(next_torque_l)
-                pub_command_torque_r.publish(next_torque_r)
+                pub_command_torque_l.publish(wheelTorques[0])
+                pub_command_torque_r.publish(wheelTorques[1])
 
                 pub_horizonWheelRates.publish(horizonWheelRates)
                 pub_horizonForcesMoments.publish(horizonForcesMoments)

@@ -34,7 +34,7 @@
 #include "acados_c/sim_interface.h"
 #include "acados_c/external_function_interface.h"
 
-#define WHEEL_FORCE_ALLOCATION_NX     8
+#define WHEEL_FORCE_ALLOCATION_NX     4
 #define WHEEL_FORCE_ALLOCATION_NZ     0
 #define WHEEL_FORCE_ALLOCATION_NU     6
 #define WHEEL_FORCE_ALLOCATION_NP     10
