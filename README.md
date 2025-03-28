@@ -13,8 +13,8 @@ This repo contains the code that supports the development of a master thesis on 
 4. [nmpc_gazebo](https://github.com/fmccastro/nmpc_code/tree/8ab37a864867297aaf7e6ecfd55b73b3ce023acb/nmpc_gazebo): location of heightmap files to render in Gazebo 11.
 
 ##	Teleoperation node
-A teleoperation node for the [mobile robot](https://github.com/fmccastro/nmpc_code/blob/ab60baa7eb3b822d2609c6c4235bec53f61a5c24/nmpc_description/robots/pioneer3at/urdf/pioneer3at.urdf) is coded [here](https://github.com/fmccastro/nmpc_code/blob/913261a1084ce2b29de2d6007a0622224d8becd1/nmpc_applications/src/mouse_joy_wheelTorques.py). You can take the code and adjust to your needs. This approach allow you to easily teleoperate a wheeled mobile robot from a pyGame Gui by mouse control, resembling a joystick.
-This first teleoperation node controls wheel torques, whereas this second teleoperation node is coded [here](https://github.com/fmccastro/nmpc_code/blob/913261a1084ce2b29de2d6007a0622224d8becd1/nmpc_applications/src/mouse_joy_wheelRates.py).
+A teleoperation node for the [mobile robot](https://github.com/fmccastro/nmpc_code/blob/ab60baa7eb3b822d2609c6c4235bec53f61a5c24/nmpc_description/robots/pioneer3at/urdf/pioneer3at.urdf) is coded [here](https://github.com/fmccastro/nmpc_code/blob/913261a1084ce2b29de2d6007a0622224d8becd1/nmpc_applications/src/mouse_joy_wheelTorques.py). You can take the code and adjust to your needs. This approach allows you to easily teleoperate a wheeled mobile robot from a pyGame Gui by mouse control, resembling a joystick.
+This first teleoperation node controls wheel torques, whereas this second [teleoperation node](https://github.com/fmccastro/nmpc_code/blob/913261a1084ce2b29de2d6007a0622224d8becd1/nmpc_applications/src/mouse_joy_wheelRates.py) controls wheel rates.
 
 ##  Main results (to be updated)
 1. Generation of traversability maps
