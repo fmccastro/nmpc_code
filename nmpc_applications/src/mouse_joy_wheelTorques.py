@@ -97,8 +97,8 @@ def joy_display(pub_bl, pub_fl, pub_br, pub_fr):
                 pygame.draw.circle(display, RED, mouse_pos, 5, 0)
 
                 #   Assign velocities to print
-                tau_l = round(round(mouse_pos[1] * m_vx + b_vx, 3), 3) # + round(mouse_pos[0] * m_wz + b_wz, 3), 3)
-                tau_r = round(round(mouse_pos[1] * m_vx + b_vx, 3), 3) # - round(mouse_pos[0] * m_wz + b_wz, 3), 3)
+                tau_l = round(round(mouse_pos[1] * m_vx + b_vx, 3) + round(mouse_pos[0] * m_wz + b_wz, 3), 3)
+                tau_r = round(round(mouse_pos[1] * m_vx + b_vx, 3) - round(mouse_pos[0] * m_wz + b_wz, 3), 3)
 
                 #   Set new text
                 v_x_text = font.render(f'tau_l [Nm]: {tau_l}', True, WHITE)

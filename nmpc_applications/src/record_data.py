@@ -8,7 +8,7 @@ upper_directory = upper_directory.parent
 lower_directory = upper_directory / "data" / "modelIdentification"
 
 #   Change bag file name according to needs
-bag_file_dir = lower_directory / "niu_1.bag"
+bag_file_dir = lower_directory / "niu_1_tau_small.bag"
 
 from sys import path
 path.append( str(classes_path) )
@@ -58,6 +58,12 @@ if __name__ == '__main__':
             bag.write('/record_data/torque_fr', tau_fr)
             bag.write('/record_data/jointState', jointStates)
             bag.write('/record_data/velocity_bodyFrame', velocity_bodyFrame)
+
+            now = rospy.Time.now()
+
+            now_time = now.secs + now.nsecs * math.pow(10, -9)
+
+            bag.write('/record_data/clock', Float64(now_time))
         
         except(tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             print( "[" + rospy.get_name() + "] Something went wrong!" )

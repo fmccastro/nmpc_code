@@ -242,7 +242,7 @@ static ocp_nlp_dims* dynamics_acados_create_setup_dimensions(dynamics_solver_cap
     nbx[0] = NBX0;
     nsbx[0] = 0;
     ns[0] = NS0;
-    nbxe[0] = 6;
+    nbxe[0] = 8;
     ny[0] = NY0;
     nh[0] = NH0;
     nsh[0] = NSH0;
@@ -456,33 +456,33 @@ void dynamics_acados_setup_nlp_in(dynamics_solver_capsule* capsule, const int N,
     else
     {
         // set time_steps
-    double time_step = 0.1;
+    double time_step = 0.04;
         for (int i = 0; i < N; i++)
         {
             ocp_nlp_in_set(nlp_config, nlp_dims, nlp_in, i, "Ts", &time_step);
         }
         // set cost scaling
         double* cost_scaling = malloc((N+1)*sizeof(double));
-        cost_scaling[0] = 0.1;
-        cost_scaling[1] = 0.1;
-        cost_scaling[2] = 0.1;
-        cost_scaling[3] = 0.1;
-        cost_scaling[4] = 0.1;
-        cost_scaling[5] = 0.1;
-        cost_scaling[6] = 0.1;
-        cost_scaling[7] = 0.1;
-        cost_scaling[8] = 0.1;
-        cost_scaling[9] = 0.1;
-        cost_scaling[10] = 0.1;
-        cost_scaling[11] = 0.1;
-        cost_scaling[12] = 0.1;
-        cost_scaling[13] = 0.1;
-        cost_scaling[14] = 0.1;
-        cost_scaling[15] = 0.1;
-        cost_scaling[16] = 0.1;
-        cost_scaling[17] = 0.1;
-        cost_scaling[18] = 0.1;
-        cost_scaling[19] = 0.1;
+        cost_scaling[0] = 0.04;
+        cost_scaling[1] = 0.04;
+        cost_scaling[2] = 0.04;
+        cost_scaling[3] = 0.04;
+        cost_scaling[4] = 0.04;
+        cost_scaling[5] = 0.04;
+        cost_scaling[6] = 0.04;
+        cost_scaling[7] = 0.04;
+        cost_scaling[8] = 0.04;
+        cost_scaling[9] = 0.04;
+        cost_scaling[10] = 0.04;
+        cost_scaling[11] = 0.04;
+        cost_scaling[12] = 0.04;
+        cost_scaling[13] = 0.04;
+        cost_scaling[14] = 0.04;
+        cost_scaling[15] = 0.04;
+        cost_scaling[16] = 0.04;
+        cost_scaling[17] = 0.04;
+        cost_scaling[18] = 0.04;
+        cost_scaling[19] = 0.04;
         cost_scaling[20] = 1;
         for (int i = 0; i <= N; i++)
         {
@@ -537,6 +537,8 @@ void dynamics_acados_setup_nlp_in(dynamics_solver_capsule* capsule, const int N,
     idxbx0[3] = 3;
     idxbx0[4] = 4;
     idxbx0[5] = 5;
+    idxbx0[6] = 6;
+    idxbx0[7] = 7;
 
     double* lubx0 = calloc(2*NBX0, sizeof(double));
     double* lbx0 = lubx0;
@@ -549,13 +551,15 @@ void dynamics_acados_setup_nlp_in(dynamics_solver_capsule* capsule, const int N,
     free(idxbx0);
     free(lubx0);
     // idxbxe_0
-    int* idxbxe_0 = malloc(6 * sizeof(int));
+    int* idxbxe_0 = malloc(8 * sizeof(int));
     idxbxe_0[0] = 0;
     idxbxe_0[1] = 1;
     idxbxe_0[2] = 2;
     idxbxe_0[3] = 3;
     idxbxe_0[4] = 4;
     idxbxe_0[5] = 5;
+    idxbxe_0[6] = 6;
+    idxbxe_0[7] = 7;
     ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, 0, "idxbxe", idxbxe_0);
     free(idxbxe_0);
 

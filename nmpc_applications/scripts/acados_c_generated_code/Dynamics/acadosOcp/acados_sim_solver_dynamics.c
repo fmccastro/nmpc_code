@@ -75,7 +75,7 @@ int dynamics_acados_sim_create(dynamics_sim_solver_capsule * capsule)
     const int np = DYNAMICS_NP;
     bool tmp_bool;
 
-    double Tsim = 0.1;
+    double Tsim = 0.04;
 
     external_function_opts ext_fun_opts;
     external_function_opts_set_to_default(&ext_fun_opts);
@@ -195,8 +195,8 @@ int dynamics_acados_sim_create(dynamics_sim_solver_capsule * capsule)
 
     /* initialize input */
     // x
-    double x0[6];
-    for (int ii = 0; ii < 6; ii++)
+    double x0[8];
+    for (int ii = 0; ii < 8; ii++)
         x0[ii] = 0.0;
 
     sim_in_set(dynamics_sim_config, dynamics_sim_dims,
@@ -212,11 +212,11 @@ int dynamics_acados_sim_create(dynamics_sim_solver_capsule * capsule)
                dynamics_sim_in, "u", u0);
 
     // S_forw
-    double S_forw[48];
-    for (int ii = 0; ii < 48; ii++)
+    double S_forw[80];
+    for (int ii = 0; ii < 80; ii++)
         S_forw[ii] = 0.0;
-    for (int ii = 0; ii < 6; ii++)
-        S_forw[ii + ii * 6 ] = 1.0;
+    for (int ii = 0; ii < 8; ii++)
+        S_forw[ii + ii * 8 ] = 1.0;
 
 
     sim_in_set(dynamics_sim_config, dynamics_sim_dims,

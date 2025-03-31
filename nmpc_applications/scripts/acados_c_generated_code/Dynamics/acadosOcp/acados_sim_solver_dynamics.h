@@ -34,7 +34,7 @@
 #include "acados_c/sim_interface.h"
 #include "acados_c/external_function_interface.h"
 
-#define DYNAMICS_NX     6
+#define DYNAMICS_NX     8
 #define DYNAMICS_NZ     0
 #define DYNAMICS_NU     2
 #define DYNAMICS_NP     4

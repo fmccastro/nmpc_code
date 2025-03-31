@@ -44,6 +44,11 @@ if __name__ == '__main__':
     pub_command_torque_l = rospy.Publisher( '/vehicle/nmpc_wheelAllocation/torque_l', Float32, queue_size = 1 )
     pub_command_torque_r = rospy.Publisher( '/vehicle/nmpc_wheelAllocation/torque_r', Float32, queue_size = 1 )
 
+    pub_bl_wheel_torque = rospy.Publisher( '/back_left_wheel_plant/command', Float64, queue_size=1 )
+    pub_fl_wheel_torque = rospy.Publisher( '/front_left_wheel_plant/command', Float64, queue_size=1 )
+    pub_br_wheel_torque = rospy.Publisher( '/back_right_wheel_plant/command', Float64, queue_size=1 )
+    pub_fr_wheel_torque = rospy.Publisher( '/front_right_wheel_plant/command', Float64, queue_size=1 )
+
     #   Subscribe to ground truth
     rospy.Subscriber( '/gazebo/link_states', LinkStates, common._callback, 0 )                                           #   '/gazebo/link_states' -> topic which collects ground truth
     rospy.Subscriber( '/vehicle/nmpc_kinematics/horizonPath', Float32MultiArray, common._multiArrayCallback, 1)          #   '/vehicle/nmpc_kinematics/horizonPath'
@@ -127,7 +132,7 @@ if __name__ == '__main__':
             print( "[" + rospy.get_name() + "] COM and MoI were not computed." )
 
     #   Trajectory tracking
-    model = WheelTorqueAllocation(com2wheels)
+    model = WheelTorqueAllocation_qp(com2wheels)
     
     index = 0
 
@@ -159,6 +164,10 @@ if __name__ == '__main__':
                 path2Follow = list(common.horizonPath.data)
                 velocity2Follow = list(common.horizonVelocity.data)
                 forcesMoments2Follow = list(common.horizonForcesMoments.data)
+
+                #print(path2Follow)
+                #print(velocity2Follow)
+                #print(forcesMoments2Follow)
                 
                 #print("[" + rospy.get_name() + "] velocity to follow: ", len(velocity2Follow))
                 
@@ -167,27 +176,40 @@ if __name__ == '__main__':
 
                     print("[" + rospy.get_name() + "] Starting initial iterations to find a suitable initial guess.")
                     
-                    model._setInitialGuess(5, [currentJointStates[0], currentJointStates[0], currentJointStates[2], currentJointStates[2]], path2Follow, velocity2Follow, forcesMoments2Follow)
+                    #model._setInitialGuess(5, [currentJointStates[0], currentJointStates[0], currentJointStates[2], currentJointStates[2]], path2Follow, velocity2Follow, forcesMoments2Follow)
+
+                    x = model._callSolver( [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],\
+                                           [path2Follow[3], path2Follow[4], velocity2Follow[0], velocity2Follow[1], velocity2Follow[2],\
+                                            velocity2Follow[3], velocity2Follow[4], velocity2Follow[5], forcesMoments2Follow[0], forcesMoments2Follow[1], currentJointStates[0], currentJointStates[1], currentJointStates[2], currentJointStates[3] ] )
 
                     input("[" + rospy.get_name() + "] Wait for input to start simulation cycle.")
 
-                solutionX, solutionU, wheelRates, normalForces, wheelTorques = model._solve( [currentJointStates[0], currentJointStates[2]], path2Follow, velocity2Follow, forcesMoments2Follow)
+                x = model._callSolver( x, [path2Follow[3], path2Follow[4], velocity2Follow[0], velocity2Follow[1], velocity2Follow[2],\
+                                            velocity2Follow[3], velocity2Follow[4], velocity2Follow[5], forcesMoments2Follow[0], forcesMoments2Follow[1], currentJointStates[0], currentJointStates[1], currentJointStates[2], currentJointStates[3] ] )
+                #solutionX, solutionU, wheelRates, normalForces, wheelTorques = model._solve( [currentJointStates[0], currentJointStates[2]], path2Follow, velocity2Follow, forcesMoments2Follow)
                 
-                horizonWheelRates.data = solutionX
-                horizonForcesMoments.data = solutionU + solutionU[-6:]
+                #horizonWheelRates.data = solutionX
+                #horizonForcesMoments.data = solutionU + solutionU[-6:]
 
-                pub_backLeftWheelRate.publish(wheelRates[0])
-                pub_frontLeftWheelRate.publish(wheelRates[0])
-                pub_backRightWheelRate.publish(wheelRates[1])
-                pub_frontRightWheelRate.publish(wheelRates[1])
+                #pub_backLeftWheelRate.publish(wheelRates[0])
+                #pub_frontLeftWheelRate.publish(wheelRates[0])
+                #pub_backRightWheelRate.publish(wheelRates[1])
+                #pub_frontRightWheelRate.publish(wheelRates[1])
 
-                pub_command_fz_bl.publish(normalForces[0])
+                """pub_command_fz_bl.publish(normalForces[0])
                 pub_command_fz_fl.publish(normalForces[1])
                 pub_command_fz_br.publish(normalForces[2])
                 pub_command_fz_fr.publish(normalForces[3])
 
                 pub_command_torque_l.publish(wheelTorques[0])
-                pub_command_torque_r.publish(wheelTorques[1])
+                pub_command_torque_r.publish(wheelTorques[1])"""
+
+                #print("Torques: ", x[4], x[5])
+
+                pub_bl_wheel_torque.publish(x[4])
+                pub_fl_wheel_torque.publish(x[4])
+                pub_br_wheel_torque.publish(x[5])
+                pub_fr_wheel_torque.publish(x[5])
 
                 pub_horizonWheelRates.publish(horizonWheelRates)
                 pub_horizonForcesMoments.publish(horizonForcesMoments)

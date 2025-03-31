@@ -46,7 +46,7 @@
   
   <param name = "robot_description" command="$(find xacro)/xacro $(arg urdf)" />
 
-  <rosparam file = "$(find nmpc_bringup)/config/wheel_torque_control.yaml" command = "load"/>
+  <rosparam file = "$(find nmpc_bringup)/config/wheel_rate_control.yaml" command = "load"/>
 
   <!-- Load joint controller configurations from YAML file to parameter server -->
   <!--<group if = "$(arg teleoperation_mode)" >

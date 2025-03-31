@@ -101,7 +101,7 @@ class Common:
     """
         Algorithm parameters
     """
-    Ts = 0.1                                                            #   Sampling Time
+    Ts = 0.04                                                            #   Sampling Time
     fixedTs = True                                                      #   Variable sampling time
     N = 20                                                              #   Control horizon
     maxCycles = 10                                                      #   Maximum number of cycles for look ahead point finder
@@ -419,6 +419,9 @@ class Common:
         
         elif( option == 30 ):
             self.gzPerformance = msg
+        
+        elif( option == 31 ):
+            self.clock = msg
     
     def _wheelLoad(self, msg, option):
 

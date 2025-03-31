@@ -32,7 +32,7 @@ if __name__ == '__main__':
     pub_backRightWheelRate = rospy.Publisher('/back_right_wheel_plant/command', Float64, queue_size = 1)
     pub_frontRightWheelRate = rospy.Publisher('/front_right_wheel_plant/command', Float64, queue_size = 1)
 
-    pub_nodePeriod = rospy.Publisher( '/vehicle/node/nmpc_kinematics/period', Float64, queue_size = 1 )
+    pub_nodePeriod = rospy.Publisher( '/vehicle/node/nmpc_dynamics/period', Float64, queue_size = 1 )
 
     pub_horizonVelocity = rospy.Publisher( '/vehicle/nmpc_dynamics/horizonVelocity', Float32MultiArray, queue_size = 1 )
     pub_horizonForcesMoments = rospy.Publisher( '/vehicle/nmpc_dynamics/horizonForcesMoments', Float32MultiArray, queue_size = 1 )
@@ -142,6 +142,9 @@ if __name__ == '__main__':
             
             currentPose = common.true_pose3D.pose
             currentVelocity = common.true_velocity_bodyFrame.velocity[0]
+            jointStates = common.jointStates.velocity
+
+            #print(jointStates)
             
             #   Check if goal point is achieved in order to break simulation loop
             if( math.dist( [currentPose.x, currentPose.y], common.goalPoint ) <= common.goalCheck ):
@@ -157,22 +160,30 @@ if __name__ == '__main__':
 
                     print("[" + rospy.get_name() + "] Starting initial iterations to find a suitable initial guess.")
                     
-                    model._setInitialGuess(5, currentVelocity, velocity2Follow, path2Follow)
+                    model._setInitialGuess(5, [0.0, 0.0], currentVelocity, velocity2Follow, path2Follow)
 
                     input("[" + rospy.get_name() + "] Wait for input to start simulation cycle.")
                 
-                solutionX, solutionU, next_fx, next_mz = model._solve(currentVelocity, velocity2Follow, path2Follow)
+                solutionX, solutionU, next_fx, next_mz, w_l, w_r = model._solve([jointStates[0], jointStates[1]], currentVelocity, velocity2Follow, path2Follow)
 
                 #print("[" + rospy.get_name() + "] horizon velocity: ", len(solutionX))
 
                 horizonVelocity.data = solutionX
                 horizonForcesMoments.data = solutionU + solutionU[-2:]
 
+                print("Wheel rates: ", w_l, w_r)
+                print("Fx Mz: ", next_fx, next_mz)
+
                 pub_horizonVelocity.publish(horizonVelocity)
                 pub_horizonForcesMoments.publish(horizonForcesMoments)
 
                 pub_command_fx.publish(next_fx)
                 pub_command_mz.publish(next_mz)
+
+                pub_backLeftWheelRate.publish(w_l)
+                pub_frontLeftWheelRate.publish(w_l)
+                pub_backRightWheelRate.publish(w_r)
+                pub_frontRightWheelRate.publish(w_r)
 
             end = time.time()
 

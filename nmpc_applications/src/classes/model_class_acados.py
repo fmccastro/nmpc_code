@@ -112,20 +112,16 @@ class ModelParameters():
             Mobile robot controls
         """
 
-        #   Wheel torques
-        self.w_bl = ca.SX.sym('w_bl')
-        self.w_fl = ca.SX.sym('w_fl')
-        self.w_br = ca.SX.sym('w_br')
-        self.w_fr = ca.SX.sym('w_fr')
+        #   Wheel rates
+        self.w_l = ca.SX.sym('w_l')
+        self.w_r = ca.SX.sym('w_r')
 
-        self.w = ca.vertcat(self.w_bl, self.w_fl, self.w_br, self.w_fr)
+        self.w = ca.vertcat(self.w_l, self.w_r)
 
-        self.d_w_bl = ca.SX.sym('d_w_bl')
-        self.d_w_fl = ca.SX.sym('d_w_fl')
-        self.d_w_br = ca.SX.sym('d_w_br')
-        self.d_w_fr = ca.SX.sym('d_w_fr')
+        self.d_w_l = ca.SX.sym('d_w_l')
+        self.d_w_r = ca.SX.sym('d_w_r')
 
-        self.w_dot = ca.vertcat( self.d_w_bl, self.d_w_fl, self.d_w_br, self.d_w_fr )
+        self.w_dot = ca.vertcat( self.d_w_l, self.d_w_r )
 
         self.w_l_ref = ca.SX.sym( 'w_l_ref' )
         self.w_r_ref = ca.SX.sym( 'w_r_ref' )
@@ -483,10 +479,10 @@ class Dynamics(ModelParameters, Common):
         super().__init__()
 
         #   state
-        state = ca.vertcat(self.lin_vel, self.ang_vel )
+        state = ca.vertcat(self.lin_vel, self.ang_vel, self.w )
         
         #   Derivative state
-        state_dot = ca.vertcat(self.lin_vel_dot, self.ang_vel_dot )
+        state_dot = ca.vertcat(self.lin_vel_dot, self.ang_vel_dot, self.w_dot )
 
         #   Parameters
         parameters = ca.vertcat(self.roll, self.pitch, self.vx_ref, self.wz_ref)
@@ -502,14 +498,21 @@ class Dynamics(ModelParameters, Common):
         #   Gravity
         gravity = self.TransRotationMatrix.T @ ca.vertcat(0, 0, self.gz)
         robotWeight = gravity * self.robotMass
+
+        v_dot = -ca.cross( self.ang_vel, self.lin_vel ) + ca.vertcat(self.fx - robotWeight[0], 0.0, 0.0) / self.robotMass
+        w_dot = ca.inv_minor( inertia ) @ ( -ca.cross( self.ang_vel, inertia @ self.ang_vel ) + ca.vertcat(0.0, 0.0, self.mz) )
         
         #   Explicit model
-        f_expl = ca.vertcat( -ca.cross( self.ang_vel, self.lin_vel ) + ca.vertcat(self.fx + robotWeight[0], 0.0, 0.0) / self.robotMass,\
-                             ca.inv_minor( inertia ) @ ( -ca.cross( self.ang_vel, inertia @ self.ang_vel ) + ca.vertcat(0.0, 0.0, self.mz) ) )
+        f_expl = ca.vertcat( -ca.cross( self.ang_vel, self.lin_vel ) + ca.vertcat(self.fx - robotWeight[0], 0.0, 0.0) / self.robotMass,\
+                             ca.inv_minor( inertia ) @ ( -ca.cross( self.ang_vel, inertia @ self.ang_vel ) + ca.vertcat(0.0, 0.0, self.mz) ),\
+                             v_dot[0] / self.wheelRadius - w_dot[2] * self.robotWidth / (2 * self.wheelRadius),\
+                             v_dot[0] / self.wheelRadius + w_dot[2] * self.robotWidth / (2 * self.wheelRadius) )
                                   
         #   Implicit model
-        f_impl = ca.vertcat( self.lin_vel_dot + ca.cross( self.ang_vel, self.lin_vel ) - ca.vertcat(self.fx + robotWeight[0], 0.0, 0.0) / self.robotMass,\
-                             self.ang_vel_dot - ca.inv_minor( inertia ) @ ( -ca.cross( self.ang_vel, inertia @ self.ang_vel ) + ca.vertcat(0.0, 0.0, self.mz) ) )
+        f_impl = ca.vertcat( self.lin_vel_dot + ca.cross( self.ang_vel, self.lin_vel ) - ca.vertcat(self.fx - robotWeight[0], 0.0, 0.0) / self.robotMass,\
+                             self.ang_vel_dot - ca.inv_minor( inertia ) @ ( -ca.cross( self.ang_vel, inertia @ self.ang_vel ) + ca.vertcat(0.0, 0.0, self.mz) ),\
+                             self.d_w_l - v_dot[0] / self.wheelRadius + w_dot[2] * self.robotWidth / (2 * self.wheelRadius),\
+                             self.d_w_r - v_dot[0] / self.wheelRadius - w_dot[2] * self.robotWidth / (2 * self.wheelRadius) )
 
         #   Call model instance
         model = AcadosModel()
@@ -533,26 +536,27 @@ class Dynamics(ModelParameters, Common):
                          self.vz,\
                          self.wz - self.wz_ref,\
                          self.fx,\
-                         self.mz )
+                         self.mz,\
+                         self.w )
     
         y = ca.vertcat(self.vx - self.vx_ref,\
                        self.vy,\
                        self.vz,\
                        self.wz - self.wz_ref,\
                        self.fx,\
-                       self.mz )
+                       self.mz,\
+                       self.w )
     
         y_e = ca.vertcat(self.vx - self.vx_ref,\
                          self.vy,\
                          self.vz,\
-                         self.wz - self.wz_ref )
+                         self.wz - self.wz_ref,\
+                         self.w )
 
-        model.cost_expr_ext_cost_0 = y_0.T @ scipy.linalg.block_diag(self.Q_v, self.Q_w[2, 2], self.Q_f[0, 0], self.Q_m[2, 2] ) @ y_0
-        model.cost_expr_ext_cost = y.T @ scipy.linalg.block_diag(self.Q_v, self.Q_w[2, 2], self.Q_f[0, 0], self.Q_m[2, 2] ) @ y
-        model.cost_expr_ext_cost_e = y_e.T @ scipy.linalg.block_diag(self.Q_v, self.Q_w[2, 2]) @ y_e
+        model.cost_expr_ext_cost_0 = y_0.T @ scipy.linalg.block_diag(self.Q_v, self.Q_w[2, 2], self.Q_f[0, 0], self.Q_m[2, 2], 1e0, 1e0 ) @ y_0
+        model.cost_expr_ext_cost = y.T @ scipy.linalg.block_diag(self.Q_v, self.Q_w[2, 2], self.Q_f[0, 0], self.Q_m[2, 2], 1e0, 1e0 ) @ y
+        model.cost_expr_ext_cost_e = y_e.T @ scipy.linalg.block_diag(self.Q_v, self.Q_w[2, 2], 1e0, 1e0) @ y_e
         ###
-
-        print("TEST 1: ", model.cost_expr_ext_cost_0.is_scalar())
 
         #   Call dims instance
         dims = AcadosOcpDims()
@@ -600,7 +604,7 @@ class Dynamics(ModelParameters, Common):
         
         constraints.idxbu = np.array( [0, 1] )
 
-        constraints.x0 = np.stack( [0, 0, 0, 0, 0, 0] ) 
+        constraints.x0 = np.stack( [0, 0, 0, 0, 0, 0, 0, 0] ) 
         ###
         
         #   Call solver options instance
@@ -659,7 +663,7 @@ class Dynamics(ModelParameters, Common):
 
         self.solver = AcadosOcpSolver(ocp, json_file = json_file_path)
     
-    def _constraints(self, initialState, velocityReference, pathReference ):
+    def _constraints(self, wheelRates, initialState, velocityReference, pathReference ):
 
         """
             Return constraints to input at NMPC model on each iteration
@@ -673,19 +677,22 @@ class Dynamics(ModelParameters, Common):
         vy0 = initialState.linear.y
         vz0 = initialState.linear.z
         wx0 = initialState.angular.x
-        wy0 = initialState.angular.x
-        wz0 = initialState.angular.x
+        wy0 = initialState.angular.y
+        wz0 = initialState.angular.z
+
+        w_l = wheelRates[0]
+        w_r = wheelRates[1]
 
         #   Set initial state
-        self.solver.set(0, 'lbx', np.stack( [vx0, vy0, vz0, wx0, wy0, wz0] ) )
-        self.solver.set(0, 'ubx', np.stack( [vx0, vy0, vz0, wx0, wy0, wz0] ) )
+        self.solver.set(0, 'lbx', np.stack( [vx0, vy0, vz0, wx0, wy0, wz0, w_l, w_r] ) )
+        self.solver.set(0, 'ubx', np.stack( [vx0, vy0, vz0, wx0, wy0, wz0, w_l, w_r] ) )
 
         for i in range(self.N + 1):
             reference = np.stack( [ pathReference[i * (self.NbPosition + self.NbOrientation) + 3],  pathReference[i * (self.NbPosition + self.NbOrientation) + 4] ]\
                                     + velocityReference[ i * 2 : (i + 1) * 2 ] )
             self.solver.set(i, 'p', reference )
         
-    def _setInitialGuess(self, numIter, velocity, velocityReference, pathReference):
+    def _setInitialGuess(self, numIter, wheelRates, velocity, velocityReference, pathReference):
         
         """
             :numIter int type, number of iterations
@@ -701,18 +708,21 @@ class Dynamics(ModelParameters, Common):
         wy0 = velocity.angular.y
         wz0 = velocity.angular.z
 
+        w_l = wheelRates[0]
+        w_r = wheelRates[1]
+
         # do some initial iterations to start with a good initial guess
         for _ in range(numIter):
             
-            self._constraints(velocity, velocityReference, pathReference)
+            self._constraints(wheelRates, velocity, velocityReference, pathReference)
 
-            u0 = self.solver.solve_for_x0(x0_bar = np.stack( [vx0, vy0, vz0, wx0, wy0, wz0] ))
+            u0 = self.solver.solve_for_x0(x0_bar = np.stack( [vx0, vy0, vz0, wx0, wy0, wz0, w_l, w_r] ))
 
             #self.solver.dump_last_qp_to_json("/home/fmccastro/Desktop/last_qp.json")
 
             print("Total time: ", self.solver.get_stats("time_tot"))
 
-    def _solve(self, velocity, velocityReference, pathReference):
+    def _solve(self, wheelRates, velocity, velocityReference, pathReference):
 
         """
             :velocity                       [vx, vy, vz, wx, wy, wz]
@@ -724,7 +734,7 @@ class Dynamics(ModelParameters, Common):
 
         if( self.nlp_solver_type == 'SQP' ):
             #   Retrieve optimization problem constraints, initial guess and parameters
-            self._constraints(state_0, velocityReference, pathReference)
+            self._constraints(wheelRates, state_0, velocityReference, pathReference)
 
             status = self.solver.solve()
 
@@ -740,7 +750,7 @@ class Dynamics(ModelParameters, Common):
             t_preparation = self.solver.get_stats("time_tot")
 
             #   Retrieve optimization problem constraints, initial guess and parameters
-            self._constraints(state_0, velocityReference, pathReference)
+            self._constraints(wheelRates, state_0, velocityReference, pathReference)
 
             self.solver.options_set('rti_phase', 2)
             status2 = self.solver.solve()
@@ -755,9 +765,9 @@ class Dynamics(ModelParameters, Common):
         
         #self.solver.print_statistics()
 
-        solutionX, solutionU, next_fx, next_mz = self._data()
+        solutionX, solutionU, next_fx, next_mz, w_l, w_r = self._data()
 
-        return solutionX, solutionU, next_fx, next_mz
+        return solutionX, solutionU, next_fx, next_mz, w_l, w_r
 
     def _data(self):
         
@@ -774,6 +784,10 @@ class Dynamics(ModelParameters, Common):
             #   solutionX -> get optimized states solution
             opt_x = self.solver.get(i, 'x')
 
+            if(i == 1):
+                w_l = opt_x[6]
+                w_r = opt_x[7]
+
             solutionX += list(opt_x) 
 
             if(i < self.N):
@@ -786,7 +800,7 @@ class Dynamics(ModelParameters, Common):
                 
                 solutionU += list(opt_u)
 
-        return solutionX, solutionU, next_fx, next_mz
+        return solutionX, solutionU, next_fx, next_mz, w_l, w_r
 
 class WheelTorqueAllocation(ModelParameters, Common):
 
@@ -873,15 +887,17 @@ class WheelTorqueAllocation(ModelParameters, Common):
         #t_br = ( (1 - sigmoid_a_t_br) * traction_1_br + sigmoid_a_t_br * traction_2_br ) * ca.tanh( 1e2 * ca.sqrt( ca.power( slip_br, 2 ) + 1e-6 ) )
         #t_fr = ( (1 - sigmoid_a_t_fr) * traction_1_fr + sigmoid_a_t_fr * traction_2_fr ) * ca.tanh( 1e2 * ca.sqrt( ca.power( slip_fr, 2 ) + 1e-6 ) )
 
-        #t_l = self.torque_l / self.wheelRadius
-        #t_r = self.torque_r / self.wheelRadius
+        t_bl = self.torque_l / self.wheelRadius
+        t_fl = self.torque_l / self.wheelRadius
+        t_br = self.torque_r / self.wheelRadius
+        t_fr = self.torque_r / self.wheelRadius
 
-        t_bl = self.niu_c * self.fz_bl * ca.tanh(1e2 * slip_bl)
-        t_fl = self.niu_c * self.fz_fl * ca.tanh(1e2 * slip_fl)
-        t_br = self.niu_c * self.fz_br * ca.tanh(1e2 * slip_br)
-        t_fr = self.niu_c * self.fz_fr * ca.tanh(1e2 * slip_fr)
+        #t_bl = self.niu_c * self.fz_bl * ca.tanh(1e2 * slip_bl)
+        #t_fl = self.niu_c * self.fz_fl * ca.tanh(1e2 * slip_fl)
+        #t_br = self.niu_c * self.fz_br * ca.tanh(1e2 * slip_br)
+        #t_fr = self.niu_c * self.fz_fr * ca.tanh(1e2 * slip_fr)
 
-        #   Force acting at each wheel
+        #   Force transferred to the ground by wheel
         f_bl = ca.vertcat( t_bl, 0.0, self.fz_bl)
         f_fl = ca.vertcat( t_fl, 0.0, self.fz_fl)
         f_br = ca.vertcat( t_br, 0.0, self.fz_br)
@@ -898,39 +914,39 @@ class WheelTorqueAllocation(ModelParameters, Common):
 
         sumMoments = m_bl + m_fl + m_br + m_fr - ca.vertcat(0.0, 0.0, self.mz)
 
-        f_expl = ca.vertcat( 1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_l - self.wheelRadius * t_bl ),\
+        """f_expl = ca.vertcat( 1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_l - self.wheelRadius * t_bl ),\
                              1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_l - self.wheelRadius * t_fl ),\
                              1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_r - self.wheelRadius * t_br ),\
-                             1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_r - self.wheelRadius * t_fr ) )
+                             1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_r - self.wheelRadius * t_fr ) )"""
 
-        f_impl = ca.vertcat( self.d_w_bl - 1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_l - self.wheelRadius * t_bl ),\
+        """f_impl = ca.vertcat( self.d_w_bl - 1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_l - self.wheelRadius * t_bl ),\
                              self.d_w_fl - 1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_l - self.wheelRadius * t_fl ),\
                              self.d_w_br - 1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_r - self.wheelRadius * t_br ),\
-                             self.d_w_fr - 1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_r - self.wheelRadius * t_fr ) )
+                             self.d_w_fr - 1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_r - self.wheelRadius * t_fr ) )"""
 
         #   Call model instance
         model = AcadosModel()
 
-        model.f_impl_expr = f_impl
-        model.f_expl_expr = f_expl
+        #model.f_impl_expr = f_impl
+        #model.f_expl_expr = f_expl
         
-        model.x = state
-        model.xdot = state_dot
+        #model.x = state
+        #model.xdot = state_dot
         model.u = controls
         model.p = parameters
-        model.con_h_expr_0 = ca.vertcat( ca.power(t_l, 2) - ca.power(self.niu_c * self.fz_bl, 2),\
-                                         ca.power(t_l, 2) - ca.power(self.niu_c * self.fz_fl, 2),\
-                                         ca.power(t_r, 2) - ca.power(self.niu_c * self.fz_br, 2),\
-                                         ca.power(t_r, 2) - ca.power(self.niu_c * self.fz_fr, 2) )
+        model.con_h_expr_0 = ca.vertcat( ca.power(t_bl, 2) - ca.power(self.niu_c * self.fz_bl * self.niu_c * ca.tanh( 100 * slip_bl ), 2),\
+                                         ca.power(t_fl, 2) - ca.power(self.niu_c * self.fz_fl * self.niu_c * ca.tanh( 100 * slip_fl ), 2),\
+                                         ca.power(t_br, 2) - ca.power(self.niu_c * self.fz_br * self.niu_c * ca.tanh( 100 * slip_br ), 2),\
+                                         ca.power(t_fr, 2) - ca.power(self.niu_c * self.fz_fr * self.niu_c * ca.tanh( 100 * slip_fr ), 2) )
         
-        model.con_h_expr = ca.vertcat( ca.power(t_l, 2) - ca.power(self.niu_c * self.fz_bl, 2),\
-                                       ca.power(t_l, 2) - ca.power(self.niu_c * self.fz_fl, 2),\
-                                       ca.power(t_r, 2) - ca.power(self.niu_c * self.fz_br, 2),\
-                                       ca.power(t_r, 2) - ca.power(self.niu_c * self.fz_fr, 2) )
+        model.con_h_expr = ca.vertcat( ca.power(t_bl, 2) - ca.power(self.niu_c * self.fz_bl * self.niu_c * ca.tanh( 100 * slip_bl ), 2),\
+                                       ca.power(t_fl, 2) - ca.power(self.niu_c * self.fz_fl * self.niu_c * ca.tanh( 100 * slip_fl ), 2),\
+                                       ca.power(t_br, 2) - ca.power(self.niu_c * self.fz_br * self.niu_c * ca.tanh( 100 * slip_br ), 2),\
+                                       ca.power(t_fr, 2) - ca.power(self.niu_c * self.fz_fr * self.niu_c * ca.tanh( 100 * slip_fr ), 2) )
         
         model.name = "wheel_force_allocation"
 
-        model.x_labels = ['$w_l$ [rad/s]', '$w_r$ [rad/s]']
+        #model.x_labels = ['$w_l$ [rad/s]', '$w_r$ [rad/s]']
         model.u_labels = [r'fz_bl [N]', r'fz_fl [N]', r'fz_br [N]', r'fz_fr [N]', r'tau_l [Nm]', r'tau_r [Nm]']
         model.t_label = '$t$ [s]'
 
@@ -939,20 +955,20 @@ class WheelTorqueAllocation(ModelParameters, Common):
         #y_e = self.w
 
         model.cost_expr_ext_cost_0 = y_0.T @ scipy.linalg.block_diag( self.Q_fn, self.Q_torque ) @ y_0
-        model.cost_expr_ext_cost = y.T @ scipy.linalg.block_diag( self.Q_fn, self.Q_torque ) @ y
-        model.cost_expr_ext_cost_e = 1
+        #model.cost_expr_ext_cost = y.T @ scipy.linalg.block_diag( self.Q_fn, self.Q_torque ) @ y
+        #model.cost_expr_ext_cost_e = 1
         #model.cost_expr_ext_cost_e = y_e.T @ scipy.linalg.block_diag( self.Q_wheel_rate ) @ y_e
         ###
 
         #   Call dims instance
         dims = AcadosOcpDims()
 
-        dims.N = self.N
+        dims.N = 1
         dims.nu = model.u.rows()
-        dims.nx = model.x.rows()
+        #dims.nx = model.x.rows()
         dims.np = model.p.rows()
-        dims.ng = 2
-        dims.ng_e = 2
+        #dims.ng = 2
+        #dims.ng_e = 2
         ###
         
         self.nx = dims.nx
@@ -963,30 +979,31 @@ class WheelTorqueAllocation(ModelParameters, Common):
         cost = AcadosOcpCost()
 
         cost.cost_type_0 = 'EXTERNAL'
-        cost.cost_type = 'EXTERNAL'
-        cost.cost_type_e = 'EXTERNAL'
+        #cost.cost_type = 'EXTERNAL'
+        #cost.cost_type_e = 'EXTERNAL'
 
         cost.cost_ext_fun_type_0 = 'casadi'
-        cost.cost_ext_fun_type = 'casadi'
-        cost.cost_ext_fun_type_e = 'casadi'
+        #cost.cost_ext_fun_type = 'casadi'
+        #cost.cost_ext_fun_type_e = 'casadi'
         ###
 
         #  Call constraints instance
         constraints = AcadosOcpConstraints()
 
-        constraints.C = np.array( [ [1.0, -1.0, 0.0, 0.0],\
-                                    [0.0, 0.0, 1.0, -1.0] ] )
+        """constraints.C = np.array( [ [0.0, 0.0, 0.0, 0.0],\
+                                    [0.0, 0.0, 0.0, 0.0] ] )
         
-        constraints.C_e = np.array( [ [1.0, -1.0, 0.0, 0.0],\
-                                      [0.0, 0.0, 1.0, -1.0] ] )
+        constraints.C_e = np.array( [ [0.0, 0.0, 0.0, 0.0],\
+                                      [0.0, 0.0, 0.0, 0.0] ] )
         
-        constraints.D = np.zeros( (2, 6) )
+        constraints.D = np.array( [ [0.0, 0.0, 0.0, 0.0, 1 / self.wheelRadius, 1 / self.wheelRadius],\
+                                    [0.0, 0.0, 0.0, 0.0, 1 / self.wheelRadius, 1 / self.wheelRadius] ] )"""
 
-        constraints.lg = np.stack( [0, 0] )
+        """constraints.lg = np.stack( [self., 0] )
         constraints.lg_e = np.stack( [0, 0] )
 
         constraints.ug = np.stack( [0, 0] )
-        constraints.ug_e = np.stack( [0, 0] )
+        constraints.ug_e = np.stack( [0, 0] )"""
 
         constraints.lbu = np.stack( self.fn_lb + self.torque_lb )
         constraints.ubu = np.stack( self.fn_ub + self.torque_ub )
@@ -999,7 +1016,7 @@ class WheelTorqueAllocation(ModelParameters, Common):
 
         constraints.idxbu = np.array( [0, 1, 2, 3, 4, 5] )
 
-        constraints.x0 = np.stack( [0, 0, 0, 0] )
+        #constraints.x0 = np.stack( [0, 0, 0, 0] )
         ###
         
         #   Call solver options instance
@@ -1069,8 +1086,8 @@ class WheelTorqueAllocation(ModelParameters, Common):
         """
 
         #   Set initial state
-        self.solver.set(0, 'lbx', np.stack( initialState ) )
-        self.solver.set(0, 'ubx', np.stack( initialState ) )
+        #self.solver.set(0, 'lbx', np.stack( initialState ) )
+        #self.solver.set(0, 'ubx', np.stack( initialState ) )
 
         #print(len(initialState), len(pathReference), len(velocityReference), len(forcesReference))
         #print("\n")
@@ -1149,9 +1166,9 @@ class WheelTorqueAllocation(ModelParameters, Common):
         
         #self.solver.print_statistics()
 
-        solutionX, solutionU, wheelRates, normalForces, wheelTorques = self._data()
+        solutionX, normalForces, wheelTorques = self._data()
 
-        return solutionX, solutionU, wheelRates, normalForces, wheelTorques
+        return solutionX, normalForces, wheelTorques
 
     def _data(self):
         
@@ -1169,10 +1186,11 @@ class WheelTorqueAllocation(ModelParameters, Common):
             opt_x = self.solver.get(i, 'x')
 
             if( i == 1 ):
-                next_w_l = opt_x[0]
-                next_w_r = opt_x[2]
+                pass
+                #next_w_l = opt_x[0]
+                #next_w_r = opt_x[2]
 
-            solutionX += list(opt_x) 
+            #solutionX += list(opt_x) 
 
             if(i < self.N):
                 #   solutionU -> get optimized controls solution
@@ -1194,9 +1212,96 @@ class WheelTorqueAllocation(ModelParameters, Common):
                 
                 solutionU += list(opt_u)
         
-        wheelRates = [next_w_l, next_w_r]
+        #wheelRates = [next_w_l, next_w_r]
         #lateralForces = [next_fy_bl, next_fy_fl, next_fy_br, next_fy_fr]
         normalForces = [next_fz_bl, next_fz_fl, next_fz_br, next_fz_fr]
         wheelTorques = [next_torque_l, next_torque_r]
 
-        return solutionX, solutionU, wheelRates, normalForces, wheelTorques
+        return solutionU, normalForces, wheelTorques
+
+class WheelTorqueAllocation_qp(ModelParameters, Common):
+
+    #   Constructor
+    def __init__(self, com2wheel):
+        
+        """
+            :com2wheel dictionary
+        """
+        
+        super().__init__()
+        
+        #   Vector from robot center of mass to each wheel center (w.r.t to body frame)
+        com2bl = ca.vertcat( com2wheel["com2bl"][0], com2wheel["com2bl"][1], com2wheel["com2bl"][2] )
+        com2fl = ca.vertcat( com2wheel["com2fl"][0], com2wheel["com2fl"][1], com2wheel["com2fl"][2] )
+        com2br = ca.vertcat( com2wheel["com2br"][0], com2wheel["com2br"][1], com2wheel["com2br"][2] )
+        com2fr = ca.vertcat( com2wheel["com2fr"][0], com2wheel["com2fr"][1], com2wheel["com2fr"][2] )
+
+        com2bl_contact = ca.vertcat( com2wheel["com2bl"][0], com2wheel["com2bl"][1], com2wheel["com2bl"][2] - self.wheelRadius )
+        com2fl_contact = ca.vertcat( com2wheel["com2fl"][0], com2wheel["com2fl"][1], com2wheel["com2fl"][2] - self.wheelRadius )
+        com2br_contact = ca.vertcat( com2wheel["com2br"][0], com2wheel["com2br"][1], com2wheel["com2br"][2] - self.wheelRadius )
+        com2fr_contact = ca.vertcat( com2wheel["com2fr"][0], com2wheel["com2fr"][1], com2wheel["com2fr"][2] - self.wheelRadius )
+
+        S_bl = ca.skew( com2bl_contact )
+        S_fl = ca.skew( com2fl_contact ) 
+        S_br = ca.skew( com2br_contact )
+        S_fr = ca.skew( com2fr_contact )
+
+        #   Wheel velocity w.r.t body frame
+        v_bl = self.lin_vel + ca.cross( self.ang_vel, com2bl )
+        v_fl = self.lin_vel + ca.cross( self.ang_vel, com2fl )
+        v_br = self.lin_vel + ca.cross( self.ang_vel, com2br )
+        v_fr = self.lin_vel + ca.cross( self.ang_vel, com2fr )
+        
+        slip_bl = self.wheelRadius * self.w_bl - v_bl[0, 0]
+        slip_fl = self.wheelRadius * self.w_fl - v_fl[0, 0]
+        slip_br = self.wheelRadius * self.w_br - v_br[0, 0]
+        slip_fr = self.wheelRadius * self.w_fr - v_fr[0, 0]
+
+        t_bl = self.torque_l / self.wheelRadius
+        t_fl = self.torque_l / self.wheelRadius
+        t_br = self.torque_r / self.wheelRadius
+        t_fr = self.torque_r / self.wheelRadius
+
+        #   Force transferred to the ground by wheel
+        f_bl = ca.vertcat( t_bl, 0.0, self.fz_bl)
+        f_fl = ca.vertcat( t_fl, 0.0, self.fz_fl)
+        f_br = ca.vertcat( t_br, 0.0, self.fz_br)
+        f_fr = ca.vertcat( t_fr, 0.0, self.fz_fr)
+
+        gravity = self.TransRotationMatrix.T @ ca.vertcat(0, 0, self.gz)
+
+        sumForces = gravity * self.robotMass + f_bl + f_fl + f_br + f_fr - ca.vertcat(self.fx, 0.0, 0.0)
+
+        m_bl = S_bl @ f_bl
+        m_fl = S_fl @ f_fl
+        m_br = S_br @ f_br
+        m_fr = S_fr @ f_fr
+
+        sumMoments = m_bl + m_fl + m_br + m_fr - ca.vertcat(0.0, 0.0, self.mz)
+
+        g = ca.vertcat( ca.power(t_bl, 2) - ca.power(self.niu_c * self.fz_bl * self.niu_c * ca.tanh( 100 * slip_bl ), 2),\
+                        ca.power(t_fl, 2) - ca.power(self.niu_c * self.fz_fl * self.niu_c * ca.tanh( 100 * slip_fl ), 2),\
+                        ca.power(t_br, 2) - ca.power(self.niu_c * self.fz_br * self.niu_c * ca.tanh( 100 * slip_br ), 2),\
+                        ca.power(t_fr, 2) - ca.power(self.niu_c * self.fz_fr * self.niu_c * ca.tanh( 100 * slip_fr ), 2) )
+
+        y = ca.vertcat( sumForces, sumMoments[2, 0], self.torque_l, self.torque_r ) 
+        Q = scipy.linalg.block_diag(self.Q_fn, self.Q_torque)
+
+        cost = y.T @ Q @ y
+
+        nlp = {'x': ca.vertcat(self.fz_wheels, self.torque_l, self.torque_r), 'f': cost, 'g': g, 'p': ca.vertcat(self.roll, self.pitch, self.lin_vel, self.ang_vel, self.fx, self.mz, self.w) }
+
+        self.solver = ca.nlpsol('solver', self.optSolver, nlp, self.optOptions)
+
+    def _callSolver(self, state, parameters):
+
+        a = time.time()
+
+        res = self.solver(x0 = state, lbx = [0.0, 0.0, 0.0, 0.0, -ca.inf, -ca.inf], ubx = [ca.inf, ca.inf, ca.inf, ca.inf, ca.inf, ca.inf],\
+                                      lbg = [-ca.inf, -ca.inf, -ca.inf, -ca.inf], ubg = [0.0, 0.0, 0.0, 0.0], p = parameters)
+
+        print(time.time() - a)
+
+        x = res['x']
+
+        return x

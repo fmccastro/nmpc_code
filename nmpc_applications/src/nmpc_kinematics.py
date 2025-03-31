@@ -22,7 +22,7 @@ if __name__ == '__main__':
     rospy.init_node('nmpc', anonymous = True, disable_signals = True)
 
     common = Common()
-
+    
     #   Publishers
     pub_backLeftWheelRate = rospy.Publisher('/back_left_wheel_plant/command', Float64, queue_size = 1)
     pub_frontLeftWheelRate = rospy.Publisher('/front_left_wheel_plant/command', Float64, queue_size = 1)
