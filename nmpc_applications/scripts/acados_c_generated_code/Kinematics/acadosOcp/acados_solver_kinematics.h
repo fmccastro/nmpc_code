@@ -64,7 +64,7 @@
 #define KINEMATICS_NY0    0
 #define KINEMATICS_NY     0
 #define KINEMATICS_NYN    0
-#define KINEMATICS_N      20
+#define KINEMATICS_N      50
 #define KINEMATICS_NH     0
 #define KINEMATICS_NHN    0
 #define KINEMATICS_NH0    0

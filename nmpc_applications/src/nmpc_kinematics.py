@@ -22,6 +22,9 @@ if __name__ == '__main__':
     rospy.init_node('nmpc', anonymous = True, disable_signals = True)
 
     common = Common()
+
+    if( common.simulationType == 1 ):
+        rospy.signal_shutdown("[" + rospy.get_name() + "] Shut down node.")
     
     #   Publishers
     pub_backLeftWheelRate = rospy.Publisher('/back_left_wheel_plant/command', Float64, queue_size = 1)
@@ -35,34 +38,26 @@ if __name__ == '__main__':
     pub_horizonVelocity = rospy.Publisher( '/vehicle/nmpc_kinematics/horizonVelocity', Float32MultiArray, queue_size = 1 )
 
     pub_command_vx = rospy.Publisher('/vehicle/nmpc_kinematics/vx', Float32, queue_size = 1)
+    pub_command_vy = rospy.Publisher('/vehicle/nmpc_kinematics/vy', Float32, queue_size = 1)
+    pub_command_vz = rospy.Publisher('/vehicle/nmpc_kinematics/vz', Float32, queue_size = 1)
+    pub_command_wx = rospy.Publisher('/vehicle/nmpc_kinematics/wx', Float32, queue_size = 1)
+    pub_command_wy = rospy.Publisher('/vehicle/nmpc_kinematics/wy', Float32, queue_size = 1)
     pub_command_wz = rospy.Publisher('/vehicle/nmpc_kinematics/wz', Float32, queue_size = 1)
 
-    #   Ground truth data
-    if( common.poseType == 0 ):
-        rospy.Subscriber( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame, common._callback, 6 )            #   '/vehicle/trueVelocity_bodyFrame' ->topic which collect robot links perfect velocity
-        rospy.Subscriber( '/vehicle/true_pose3D', pose3DStamped, common._callback, 3 )                                       #   '/vehicle/truePose' -> topic which collects robot perfect pose
+    rospy.Subscriber( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame, common._callback, 6 )            #   '/vehicle/trueVelocity_bodyFrame' ->topic which collect robot links perfect velocity
+    rospy.Subscriber( '/vehicle/true_pose3D', pose3DStamped, common._callback, 3 )                                       #   '/vehicle/truePose' -> topic which collects robot perfect pose
 
-        rospy.wait_for_message( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame )
-        rospy.wait_for_message( '/vehicle/true_pose3D', pose3DStamped )
-
-    #   Subscribe to obstacles in case of obstacle avoidance and publish respective markers
-    if( common.simulationType == 1 ):
-        pub_statesNMPCSolution = rospy.Publisher('/vehicle/nmpc_kinematics/statesSolution', Float32MultiArray, queue_size = 1)
-        pub_controlNMPCSolution = rospy.Publisher('/vehicle/nmpc_kinematics/controlSolution', Float32MultiArray, queue_size = 1)
-        pub_state = rospy.Publisher('/vehicle/simState', Int32, queue_size = 1)
-        
-        """rospy.wait_for_message('/vehicle/ciao/centers', Float32MultiArray)
-        rospy.wait_for_message('/vehicle/ciao/dist2Obstacles', Float32MultiArray)
-        rospy.wait_for_message('/vehicle/ciao/closestObstacles', Float32MultiArray)"""
+    rospy.wait_for_message( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame )
+    rospy.wait_for_message( '/vehicle/true_pose3D', pose3DStamped )
 
     #   Subscriptions
     rospy.Subscriber( '/gazebo/link_states', LinkStates, common._callback, 0 )                                              #   '/gazebo/link_states' -> topic which collects ground truth
     rospy.Subscriber( '/joint_states', JointState, common._callback, 8 )                                                    #   '/vehicle/joint_states' -> topic which collects the joint position and velocity ( linear or angular )  
-    rospy.Subscriber( '/vehicle/reference', Float32MultiArray, common._multiArrayCallback, 0 )                              #   '/vehicle/reference' -> topic which collects the reference path                                                   
+    rospy.Subscriber( '/vehicle/reference', referencePath, common._multiArrayCallback, 0 )                              #   '/vehicle/reference' -> topic which collects the reference path                                                   
 
     rospy.wait_for_message( '/joint_states', JointState )
     rospy.wait_for_message( '/gazebo/link_states', LinkStates )
-    rospy.wait_for_message( '/vehicle/reference', Float32MultiArray )
+    rospy.wait_for_message( '/vehicle/reference', referencePath )
 
     #   Services
     rospy.wait_for_service( '/gazebo/get_world_properties' )
@@ -99,34 +94,6 @@ if __name__ == '__main__':
         Set constraints
     """
 
-    tf_flag = True
-
-    while(tf_flag):
-        try:
-            tfBuffer = tf2_ros.Buffer()
-            listener = tf2_ros.TransformListener(tfBuffer)
-
-            d_bl = tfBuffer.lookup_transform('base_link', 'back_left_hub', rospy.Time(0))
-            d_fl = tfBuffer.lookup_transform('base_link', 'front_left_hub', rospy.Time(0))
-            d_br = tfBuffer.lookup_transform('base_link', 'back_right_hub', rospy.Time(0))
-            d_fr = tfBuffer.lookup_transform('base_link', 'front_right_hub', rospy.Time(0))
-            
-            robotInertia = common._computeCOM(vehicleProperties, get_link_properties, tfBuffer)
-            
-            com2wheels = { 'com2bl': [d_bl.transform.translation.x - robotInertia.com.x, d_bl.transform.translation.y - robotInertia.com.y, d_bl.transform.translation.z - robotInertia.com.z],\
-                           'com2fl': [d_fl.transform.translation.x - robotInertia.com.x, d_fl.transform.translation.y - robotInertia.com.y, d_fl.transform.translation.z - robotInertia.com.z],\
-                           'com2br': [d_br.transform.translation.x - robotInertia.com.x, d_br.transform.translation.y - robotInertia.com.y, d_br.transform.translation.z - robotInertia.com.z],\
-                           'com2fr': [d_fr.transform.translation.x - robotInertia.com.x, d_fr.transform.translation.y - robotInertia.com.y, d_fr.transform.translation.z - robotInertia.com.z] }
-            
-            #   Save com2wheels to file
-            with open( common.results_folder + "com2wheels_" + common.robot + '.pickle', 'wb') as handle:
-                pickle.dump(com2wheels, handle, protocol = pickle.HIGHEST_PROTOCOL)
-
-            tf_flag = False
-            
-        except(tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            print( "[nmpc.py] COM and MoI were not computed." )
-
     #   Path tracking
     model = Kinematics()
     
@@ -149,44 +116,69 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():
         try:
             start = time.time()
-
-            jointStates = common.jointStates
             
             currentPose = common.true_pose3D.pose
-            currentVelocity = common.true_velocity_bodyFrame
-            
+
             #   Check if goal point is achieved in order to break simulation loop
             if( math.dist( [currentPose.x, currentPose.y], common.goalPoint ) <= common.goalCheck ):
                 print("[nmpc_kinematics.py] Goal point was reached. Simulation ends.")
                 break
                 
             else:
-                path2Follow = list(common.referencePath.data)
-
                 if(index == 0):
                     print("[nmpc_kinematics.py] Starting initial iterations to find a suitable initial guess.")
+
+                    path2Follow = common.referencePath
+
+                    initialPose = path2Follow.startingPose
+                    reference = list(path2Follow.reference)
+
+                    print(initialPose)
+                    print(reference)
                     
-                    model._setInitialGuess(5, currentPose, path2Follow)
+                    model._setInitialGuess(common.N + 1, path2Follow[0:6], reference)
 
                     input("[nmpc_kinematics.py] Wait for input to start simulation cycle.")
-                
-                solutionX, solutionU, next_vx, next_wz = model._solve(currentPose, path2Follow)
 
-                #print("Controls (vx, wz): ", next_vx, next_wz)
+                if( common.nlp_solver_type == 'SQP' ):
+                    path2Follow = common.referencePath
+                    initialPose = path2Follow.startingPose
+                    reference = path2Follow.reference
+                    
+                    currentVelocity = common.true_velocity_bodyFrame.velocity[0]
+
+                    next_vx, next_wz = model._solve(path2Follow[0:6], path2Follow)
+
+                elif( common.nlp_solver_type == 'SQP_RTI' ):
+                    model._preparation_sqp_rti()
+
+                    path2Follow = common.referencePath
+                    initialPose = path2Follow.startingPose
+                    reference = path2Follow.reference
+
+                    currentVelocity = common.true_velocity_bodyFrame.velocity[0]
+
+                    next_vx, next_wz = model._feedback_sqp_rti(path2Follow[0:6], path2Follow)
+
+                solutionX, solutionU, cost, optTime = model._data()
 
                 horizonPath.data = solutionX
                 horizonVelocity.data = solutionU + solutionU[-2:]
 
-                next_wr, next_wl = common._cmdVelocity2JointVelocity(next_vx, next_wz)
-
                 if( common.simulationType == 0 ):
+                    next_wr, next_wl = common._cmdVelocity2JointVelocity(next_vx, next_wz)
+
                     pub_backLeftWheelRate.publish(next_wl)
                     pub_frontLeftWheelRate.publish(next_wl)
                     pub_backRightWheelRate.publish(next_wr)
                     pub_frontRightWheelRate.publish(next_wr)
 
                 pub_command_vx.publish(solutionU[0])
-                pub_command_wz.publish(solutionU[1])
+                pub_command_vy.publish(solutionU[1])
+                pub_command_vz.publish(solutionU[2])
+                pub_command_wx.publish(solutionU[3])
+                pub_command_wy.publish(solutionU[4])
+                pub_command_wz.publish(solutionU[5])
 
                 pub_horizonPath.publish(horizonPath)
                 pub_horizonVelocity.publish(horizonVelocity)

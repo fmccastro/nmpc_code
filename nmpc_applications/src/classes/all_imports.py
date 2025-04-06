@@ -10,14 +10,13 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, Inertia, Polygon, Point, Pose, Point, Quaternion, Vector3, Wrench, WrenchStamped
 from gazebo_msgs.msg import LinkStates, PerformanceMetrics
 from visualization_msgs.msg import Marker, MarkerArray
-from thesis_main.msg import pose3D, velocity3D, pose3DStamped, wheelTrueVelocitiesBodyFrame
+from nmpc_bringup.msg import pose3D, velocity3D, pose3DStamped, wheelTrueVelocitiesBodyFrame, referencePath
 
 #   Services
 from gazebo_msgs.srv import GetModelProperties, GetWorldProperties, GetLinkProperties, GetPhysicsProperties, ApplyJointEffort, JointRequest
 from controller_manager_msgs.srv import ListControllers, UnloadController, SwitchController
 
 import numpy as np
-#import pandas as pd
 import casadi as ca
 import cv2 as cv
 import matplotlib.pyplot as plt
@@ -30,7 +29,7 @@ import scipy.spatial.distance as dist
 from scipy.spatial.transform import Rotation as R
 from matplotlib import cm
 from scipy import interpolate
-from scipy.interpolate import splprep, splev
+from scipy.interpolate import splprep, splev, CubicSpline
 from scipy.optimize import minimize
 from functools import partial
 from matplotlib.patches import Ellipse
@@ -44,4 +43,4 @@ from PIL import Image
 #from simple_pid import PID
 
 #   Acados
-from acados_template import AcadosModel, AcadosOcpCost, AcadosOcpConstraints, AcadosOcpDims, AcadosOcp, AcadosOcpSolver, AcadosOcpOptions, AcadosSimSolver
+from acados_template import AcadosModel, AcadosOcpCost, AcadosOcpConstraints, AcadosOcpDims, AcadosOcp, AcadosOcpSolver, AcadosOcpOptions, AcadosSimSolver, AcadosSimOptions, AcadosSimDims, AcadosSim

@@ -71,6 +71,10 @@ int main()
     x_current[5] = 0.0;
     x_current[6] = 0.0;
     x_current[7] = 0.0;
+    x_current[8] = 0.0;
+    x_current[9] = 0.0;
+    x_current[10] = 0.0;
+    x_current[11] = 0.0;
 
   
     x_current[0] = 0;
@@ -81,6 +85,10 @@ int main()
     x_current[5] = 0;
     x_current[6] = 0;
     x_current[7] = 0;
+    x_current[8] = 0;
+    x_current[9] = 0;
+    x_current[10] = 0;
+    x_current[11] = 0;
     
   
 
@@ -89,12 +97,19 @@ int main()
     double u0[NU];
     u0[0] = 0.0;
     u0[1] = 0.0;
+    u0[2] = 0.0;
+    u0[3] = 0.0;
+    u0[4] = 0.0;
+    u0[5] = 0.0;
+    u0[6] = 0.0;
+    u0[7] = 0.0;
+    u0[8] = 0.0;
+    u0[9] = 0.0;
     // set parameters
     double p[NP];
     p[0] = 1;
     p[1] = 1;
     p[2] = 1;
-    p[3] = 1;
 
     dynamics_acados_sim_update_params(capsule, p, NP);
   

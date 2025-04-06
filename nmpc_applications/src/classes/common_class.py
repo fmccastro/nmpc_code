@@ -88,7 +88,7 @@ class Common:
         2 -> add obstacle avoidance
         3 -> add parameter estimation
     """
-    simulationType = 1
+    simulationType = 0
 
     """
         Convex inner approximation iteration parameters
@@ -101,9 +101,9 @@ class Common:
     """
         Algorithm parameters
     """
-    Ts = 0.04                                                            #   Sampling Time
+    Ts = 0.1                                                            #   Sampling Time
     fixedTs = True                                                      #   Variable sampling time
-    N = 20                                                              #   Control horizon
+    N = 50                                                              #   Control horizon
     maxCycles = 10                                                      #   Maximum number of cycles for look ahead point finder
     intAccuracy = 4                                                     #   Runge-kutta integrator accuracy
     
@@ -163,7 +163,14 @@ class Common:
     
     """ Limits on the Robot's Controls """
     
-    #   v = (vx, vy, vz) :m/s
+    #   Kinematics control bounds
+    vx_lb = -1.0
+    vx_ub = 1.0
+
+    wz_lb = -120 * math.pi / 180.0
+    wz_ub = 120 * math.pi / 180.0
+
+    #
     v_lb = [ -100.0, -1000.0, -1000.0 ]
     v_ub = [ 100.0, 1000.0, 1000.0 ]
 
@@ -187,7 +194,7 @@ class Common:
     wheel_rate_ub = [10.0, 10.0]
 
     #   forces limits: N
-    f_lb = [0, -1000, 0]
+    f_lb = [-1000.0, -1000, 0]
     f_ub = [1000, 1000, 1000]
 
     #   moments limits: Nm
@@ -212,34 +219,54 @@ class Common:
 
     """ Penalty Matrices """
     
-    #   Pose cost
-    Q_p = 2 * np.diag( [ 1e0, 1e0, 1e0 ] )                                  
-    Q_o = 2 * np.diag( [ 1e0, 1e0, 1e0 ] )                                
+    #   Kinematics costs    ##################
+    Q_p_kin = 2 * np.diag( [ 1e-1, 1e-1, 0e0 ] )                                  
+    Q_o_kin = 2 * np.diag( [ 0e0, 0e0, 1e0 ] )  
+
+    Q_vx_kin = 2 * 1e0     
+    Q_wz_kin = 2 * 1e-1
+
+    Q_p_kin_t = 2 * np.diag( [ 1e-1, 1e-1, 0e0 ] )                                  
+    Q_o_kin_t = 2 * np.diag( [ 0e0, 0e0, 1e0 ] )  
+
+    Q_vx_kin_t = 2 * 1e-1                           
+    Q_wz_kin_t = 2 * 2e-1
+    ##########################################
+
+    #   Trajectory generation costs     ######
+    Q_p_traj = 2 * np.diag( [ 1e0, 1e0, 0e0 ] )                                  
+    Q_o_traj = 2 * np.diag( [ 0e0, 0e0, 1e1 ] )  
+
+    Q_v_traj = 2 * np.diag( [ 1e-2, 1e-2, 1e-2 ] )                                 
+    Q_w_traj = 2 * np.diag( [ 1e-2, 1e-2, 1e-2 ] )
+
+    Q_p_traj_t = 2 * np.diag( [ 1e0, 1e0, 0e0 ] )                                  
+    Q_o_traj_t = 2 * np.diag( [ 0e0, 0e0, 1e1 ] )  
+
+    Q_v_traj_t = 2 * np.diag( [ 1e-2, 1e0, 1e0] )                                 
+    Q_w_traj_t = 2 * np.diag( [ 1e-2, 1e-2, 1e-2 ] ) 
+
+    Q_f_traj = 2 * np.diag( [1e-5] * 10 )
+    ##########################################
     
-    #   Velocities cost
-    Q_v = 2 * np.diag( [ 1e0, 1e2, 1e2 ] )                                 
-    Q_w = 2 * np.diag( [ 1e-1, 1e-1, 1e0 ] )
-    
-    Q_wheel_rate = 2 * np.diag( [5e-1, 5e-1] )        
+    #   Dynamics costs  ######################
+    Q_p_dyn = 2 * np.diag( [ 0e0, 0e0, 0e0 ] )                                  
+    Q_o_dyn = 2 * np.diag( [ 0e0, 0e0, 0e0 ] )  
 
-    #   Forces cost
-    Q_f = 2 * np.diag( [1e0, 1e0, 1e0] )                                #   forces cost                 [fx, fy, fz]
+    Q_v_dyn = 2 * np.diag( [ 1e0, 1e0, 1e0 ] )                                 
+    Q_w_dyn = 2 * np.diag( [ 0e0, 0e0, 1e0 ] )
 
-    #   Moments cost
-    Q_m = 2 * np.diag( [1e0, 1e0, 1e0] )                                #   moments cost                [mx, my, mz]
+    Q_p_dyn_t = 2 * np.diag( [ 0e0, 0e0, 0e0 ] )                                  
+    Q_o_dyn_t = 2 * np.diag( [ 0e0, 0e0, 0e0 ] )  
 
-    #   Wheel torque cost
-    Q_torque = 2 * np.diag( [5e0, 5e0] )                                #   wheel torque control cost   [tau_l, tau_r]
+    Q_v_dyn_t = 2 * np.diag( [ 1e0, 1e0, 1e0 ] )                                 
+    Q_w_dyn_t = 2 * np.diag( [ 0e0, 0e0, 1e0 ] ) 
 
-    #   Lateral forces cost
-    Q_fy = 2 * np.diag( [1e0, 1e0, 1e0, 1e0] )
-
-    #   Normal forces cost
-    Q_fn = 2 * np.diag( [1e0, 1e0, 1e0, 1e0] )                          #   Wheel normal forces cost    [fz_bl, fz_fl, fz_br, fz_fr]
+    Q_f_dyn = 2 * np.diag( [1e-1] * 10 )
+    ##########################################      
 
     #   SQP or SQP_RTI
-    nlp_solver_type = 'SQP'                                                                  
-
+    nlp_solver_type = 'SQP_RTI'                                                                  
 
     """ Cost Function choice """
     costFunction = 0                                                    #   choose cost function

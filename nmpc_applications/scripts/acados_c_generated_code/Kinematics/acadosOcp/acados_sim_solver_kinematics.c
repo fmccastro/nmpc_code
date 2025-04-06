@@ -75,7 +75,7 @@ int kinematics_acados_sim_create(kinematics_sim_solver_capsule * capsule)
     const int np = KINEMATICS_NP;
     bool tmp_bool;
 
-    double Tsim = 0.04;
+    double Tsim = 0.1;
 
     external_function_opts ext_fun_opts;
     external_function_opts_set_to_default(&ext_fun_opts);
@@ -140,7 +140,7 @@ int kinematics_acados_sim_create(kinematics_sim_solver_capsule * capsule)
     // sim opts
     sim_opts *kinematics_sim_opts = sim_opts_create(kinematics_sim_config, kinematics_sim_dims);
     capsule->acados_sim_opts = kinematics_sim_opts;
-    int tmp_int = 20;
+    int tmp_int = 3;
     sim_opts_set(kinematics_sim_config, kinematics_sim_opts, "newton_iter", &tmp_int);
     double tmp_double = 0;
     sim_opts_set(kinematics_sim_config, kinematics_sim_opts, "newton_tol", &tmp_double);

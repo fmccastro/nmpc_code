@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     common = Common()
 
-    if( common.simulationType == 0 ):
+    if( common.simulationType != 1 ):
         rospy.signal_shutdown("[" + rospy.get_name() + "] Shut down node.")
 
     #   Publishers
@@ -34,11 +34,11 @@ if __name__ == '__main__':
 
     pub_nodePeriod = rospy.Publisher( '/vehicle/node/nmpc_dynamics/period', Float64, queue_size = 1 )
 
-    pub_horizonVelocity = rospy.Publisher( '/vehicle/nmpc_dynamics/horizonVelocity', Float32MultiArray, queue_size = 1 )
+    pub_horizonState = rospy.Publisher( '/vehicle/nmpc_dynamics/horizonState', Float32MultiArray, queue_size = 1 )
     pub_horizonForcesMoments = rospy.Publisher( '/vehicle/nmpc_dynamics/horizonForcesMoments', Float32MultiArray, queue_size = 1 )
 
-    pub_command_fx = rospy.Publisher('/vehicle/nmpc_dynamics/fx', Float32, queue_size = 1)
-    pub_command_mz = rospy.Publisher('/vehicle/nmpc_dynamics/mz', Float32, queue_size = 1)
+    pub_command_fx_l = rospy.Publisher('/vehicle/nmpc_dynamics/fx_l', Float32, queue_size = 1)
+    pub_command_fx_r = rospy.Publisher('/vehicle/nmpc_dynamics/fx_r', Float32, queue_size = 1)
 
     #   Subscribe to ground truth
     rospy.Subscriber( '/gazebo/link_states', LinkStates, common._callback, 0 )                                           #   '/gazebo/link_states' -> topic which collects ground truth
@@ -46,12 +46,14 @@ if __name__ == '__main__':
     rospy.Subscriber( '/vehicle/nmpc_kinematics/horizonVelocity', Float32MultiArray, common._multiArrayCallback, 2)      #   '/vehicle/nmpc_kinematics/horizonVelocity' -> topic which collects control horizon from kinematics problem
     rospy.Subscriber( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame, common._callback, 6 )            #   '/vehicle/trueVelocity_bodyFrame' -> topic which collect robot links perfect velocity
     rospy.Subscriber( '/vehicle/true_pose3D', pose3DStamped, common._callback, 3 )                                       #   '/vehicle/truePose' -> topic which collects robot perfect pose
+    rospy.Subscriber( '/vehicle/reference', Float32MultiArray, common._multiArrayCallback, 0 )                           #   '/vehicle/reference' -> topic which collects the reference path 
 
     rospy.wait_for_message( '/gazebo/link_states', LinkStates )
     rospy.wait_for_message( '/vehicle/nmpc_kinematics/horizonPath', Float32MultiArray )
     rospy.wait_for_message( '/vehicle/nmpc_kinematics/horizonVelocity', Float32MultiArray )
     rospy.wait_for_message( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame )
     rospy.wait_for_message( '/vehicle/true_pose3D', pose3DStamped )
+    rospy.wait_for_message( '/vehicle/reference', Float32MultiArray )
 
     #   Subscriptions
     rospy.Subscriber( '/joint_states', JointState, common._callback, 8 )                                                    #   '/vehicle/joint_states' -> topic which collects the joint position and velocity ( linear or angular )
@@ -121,11 +123,12 @@ if __name__ == '__main__':
             print( "[nmpc.py] COM and MoI were not computed." )
 
     #   Trajectory tracking
-    model = Dynamics()
+    model = Dynamics(com2wheels)
+    integrator = wheelRateIntegrator()
     
     index = 0
 
-    horizonVelocity = Float32MultiArray()
+    horizonState = Float32MultiArray()
     horizonForcesMoments = Float32MultiArray()
     ###
 
@@ -141,10 +144,6 @@ if __name__ == '__main__':
             start = time.time()
             
             currentPose = common.true_pose3D.pose
-            currentVelocity = common.true_velocity_bodyFrame.velocity[0]
-            jointStates = common.jointStates.velocity
-
-            #print(jointStates)
             
             #   Check if goal point is achieved in order to break simulation loop
             if( math.dist( [currentPose.x, currentPose.y], common.goalPoint ) <= common.goalCheck ):
@@ -152,38 +151,65 @@ if __name__ == '__main__':
                 break
                 
             else:
-                path2Follow = list(common.horizonPath.data)
-                velocity2Follow = list(common.horizonVelocity.data)
-                
                 if(index == 0):
                     # do some initial iterations to start with a good initial guess
-
                     print("[" + rospy.get_name() + "] Starting initial iterations to find a suitable initial guess.")
+
+                    currentPose = common.true_pose3D.pose
+                    currentVelocity = common.true_velocity_bodyFrame.velocity[0]
+
+                    horizonPath = list(common.horizonPath.data)
+                    horizonVelocity = list(common.horizonVelocity.data)
                     
-                    model._setInitialGuess(5, [0.0, 0.0], currentVelocity, velocity2Follow, path2Follow)
+                    model._setInitialGuess(10, currentPose, currentVelocity, horizonPath, horizonVelocity)
 
                     input("[" + rospy.get_name() + "] Wait for input to start simulation cycle.")
                 
-                solutionX, solutionU, next_fx, next_mz, w_l, w_r = model._solve([jointStates[0], jointStates[1]], currentVelocity, velocity2Follow, path2Follow)
+                if( common.nlp_solver_type == 'SQP' ):
+                    currentPose = common.true_pose3D.pose
+                    currentVelocity = common.true_velocity_bodyFrame.velocity[0]
 
-                #print("[" + rospy.get_name() + "] horizon velocity: ", len(solutionX))
+                    horizonPath = list(common.horizonPath.data)
+                    horizonVelocity = list(common.horizonVelocity.data)
 
-                horizonVelocity.data = solutionX
-                horizonForcesMoments.data = solutionU + solutionU[-2:]
+                    solutionX, solutionU, next_fx_l, next_fx_r = model._solve_sqp(currentPose, currentVelocity, horizonPath, horizonVelocity)
 
-                print("Wheel rates: ", w_l, w_r)
-                print("Fx Mz: ", next_fx, next_mz)
+                elif( common.nlp_solver_type == 'SQP_RTI' ):
+                    model._preparation_sqp_rti()
 
-                pub_horizonVelocity.publish(horizonVelocity)
+                    currentPose = common.true_pose3D.pose
+                    currentVelocity = common.true_velocity_bodyFrame.velocity[0]
+
+                    horizonPath = list(common.horizonPath.data)
+                    horizonVelocity = list(common.horizonVelocity.data)
+
+                    solutionX, solutionU, next_fx_l, next_fx_r = model._feedback_sqp_rti(currentPose, currentVelocity, horizonPath, horizonVelocity)
+
+                    print(next_fx_l, next_fx_r)
+
+                if( index == 0 ):
+                    timeDiff = 0.1
+                
+                else:
+                    pass
+
+                jointStates = common.jointStates.velocity
+
+                res = integrator._callIntegrator(jointStates[0], jointStates[1], next_fx_l, next_fx_r, timeDiff)
+
+                horizonState.data = solutionX
+                horizonForcesMoments.data = solutionU + solutionU[-6:]
+
+                pub_horizonState.publish(horizonState)
                 pub_horizonForcesMoments.publish(horizonForcesMoments)
 
-                pub_command_fx.publish(next_fx)
-                pub_command_mz.publish(next_mz)
+                pub_command_fx_l.publish(next_fx_l)
+                pub_command_fx_r.publish(next_fx_r)
 
-                pub_backLeftWheelRate.publish(w_l)
-                pub_frontLeftWheelRate.publish(w_l)
-                pub_backRightWheelRate.publish(w_r)
-                pub_frontRightWheelRate.publish(w_r)
+                pub_backLeftWheelRate.publish(res[0])
+                pub_frontLeftWheelRate.publish(res[0])
+                pub_backRightWheelRate.publish(res[1])
+                pub_frontRightWheelRate.publish(res[1])
 
             end = time.time()
 

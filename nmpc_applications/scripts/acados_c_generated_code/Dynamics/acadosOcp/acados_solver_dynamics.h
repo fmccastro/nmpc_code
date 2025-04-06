@@ -36,14 +36,14 @@
 #include "acados_c/ocp_nlp_interface.h"
 #include "acados_c/external_function_interface.h"
 
-#define DYNAMICS_NX     8
+#define DYNAMICS_NX     12
 #define DYNAMICS_NZ     0
-#define DYNAMICS_NU     2
-#define DYNAMICS_NP     4
+#define DYNAMICS_NU     10
+#define DYNAMICS_NP     3
 #define DYNAMICS_NP_GLOBAL     0
 #define DYNAMICS_NBX    0
-#define DYNAMICS_NBX0   8
-#define DYNAMICS_NBU    2
+#define DYNAMICS_NBX0   12
+#define DYNAMICS_NBU    10
 #define DYNAMICS_NSBX   0
 #define DYNAMICS_NSBU   0
 #define DYNAMICS_NSH    0
@@ -64,7 +64,7 @@
 #define DYNAMICS_NY0    0
 #define DYNAMICS_NY     0
 #define DYNAMICS_NYN    0
-#define DYNAMICS_N      20
+#define DYNAMICS_N      300
 #define DYNAMICS_NH     0
 #define DYNAMICS_NHN    0
 #define DYNAMICS_NH0    0

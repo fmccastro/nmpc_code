@@ -151,7 +151,7 @@ void dynamics_acados_create_set_plan(ocp_nlp_plan_t* nlp_solver_plan, const int 
     *  plan
     ************************************************/
 
-    nlp_solver_plan->nlp_solver = SQP;
+    nlp_solver_plan->nlp_solver = SQP_RTI;
 
     nlp_solver_plan->ocp_qp_solver_plan.qp_solver = PARTIAL_CONDENSING_HPIPM;
     nlp_solver_plan->relaxed_ocp_qp_solver_plan.qp_solver = PARTIAL_CONDENSING_HPIPM;
@@ -242,7 +242,7 @@ static ocp_nlp_dims* dynamics_acados_create_setup_dimensions(dynamics_solver_cap
     nbx[0] = NBX0;
     nsbx[0] = 0;
     ns[0] = NS0;
-    nbxe[0] = 8;
+    nbxe[0] = 12;
     ny[0] = NY0;
     nh[0] = NH0;
     nsh[0] = NSH0;
@@ -416,7 +416,6 @@ void dynamics_acados_create_set_default_parameters(dynamics_solver_capsule* caps
     p[0] = 1;
     p[1] = 1;
     p[2] = 1;
-    p[3] = 1;
 
     for (int i = 0; i <= N; i++) {
         dynamics_acados_update_params(capsule, i, p, NP);
@@ -456,34 +455,314 @@ void dynamics_acados_setup_nlp_in(dynamics_solver_capsule* capsule, const int N,
     else
     {
         // set time_steps
-    double time_step = 0.04;
+    double time_step = 0.01;
         for (int i = 0; i < N; i++)
         {
             ocp_nlp_in_set(nlp_config, nlp_dims, nlp_in, i, "Ts", &time_step);
         }
         // set cost scaling
         double* cost_scaling = malloc((N+1)*sizeof(double));
-        cost_scaling[0] = 0.04;
-        cost_scaling[1] = 0.04;
-        cost_scaling[2] = 0.04;
-        cost_scaling[3] = 0.04;
-        cost_scaling[4] = 0.04;
-        cost_scaling[5] = 0.04;
-        cost_scaling[6] = 0.04;
-        cost_scaling[7] = 0.04;
-        cost_scaling[8] = 0.04;
-        cost_scaling[9] = 0.04;
-        cost_scaling[10] = 0.04;
-        cost_scaling[11] = 0.04;
-        cost_scaling[12] = 0.04;
-        cost_scaling[13] = 0.04;
-        cost_scaling[14] = 0.04;
-        cost_scaling[15] = 0.04;
-        cost_scaling[16] = 0.04;
-        cost_scaling[17] = 0.04;
-        cost_scaling[18] = 0.04;
-        cost_scaling[19] = 0.04;
-        cost_scaling[20] = 1;
+        cost_scaling[0] = 0.01;
+        cost_scaling[1] = 0.01;
+        cost_scaling[2] = 0.01;
+        cost_scaling[3] = 0.01;
+        cost_scaling[4] = 0.01;
+        cost_scaling[5] = 0.01;
+        cost_scaling[6] = 0.01;
+        cost_scaling[7] = 0.01;
+        cost_scaling[8] = 0.01;
+        cost_scaling[9] = 0.01;
+        cost_scaling[10] = 0.01;
+        cost_scaling[11] = 0.01;
+        cost_scaling[12] = 0.01;
+        cost_scaling[13] = 0.01;
+        cost_scaling[14] = 0.01;
+        cost_scaling[15] = 0.01;
+        cost_scaling[16] = 0.01;
+        cost_scaling[17] = 0.01;
+        cost_scaling[18] = 0.01;
+        cost_scaling[19] = 0.01;
+        cost_scaling[20] = 0.01;
+        cost_scaling[21] = 0.01;
+        cost_scaling[22] = 0.01;
+        cost_scaling[23] = 0.01;
+        cost_scaling[24] = 0.01;
+        cost_scaling[25] = 0.01;
+        cost_scaling[26] = 0.01;
+        cost_scaling[27] = 0.01;
+        cost_scaling[28] = 0.01;
+        cost_scaling[29] = 0.01;
+        cost_scaling[30] = 0.01;
+        cost_scaling[31] = 0.01;
+        cost_scaling[32] = 0.01;
+        cost_scaling[33] = 0.01;
+        cost_scaling[34] = 0.01;
+        cost_scaling[35] = 0.01;
+        cost_scaling[36] = 0.01;
+        cost_scaling[37] = 0.01;
+        cost_scaling[38] = 0.01;
+        cost_scaling[39] = 0.01;
+        cost_scaling[40] = 0.01;
+        cost_scaling[41] = 0.01;
+        cost_scaling[42] = 0.01;
+        cost_scaling[43] = 0.01;
+        cost_scaling[44] = 0.01;
+        cost_scaling[45] = 0.01;
+        cost_scaling[46] = 0.01;
+        cost_scaling[47] = 0.01;
+        cost_scaling[48] = 0.01;
+        cost_scaling[49] = 0.01;
+        cost_scaling[50] = 0.01;
+        cost_scaling[51] = 0.01;
+        cost_scaling[52] = 0.01;
+        cost_scaling[53] = 0.01;
+        cost_scaling[54] = 0.01;
+        cost_scaling[55] = 0.01;
+        cost_scaling[56] = 0.01;
+        cost_scaling[57] = 0.01;
+        cost_scaling[58] = 0.01;
+        cost_scaling[59] = 0.01;
+        cost_scaling[60] = 0.01;
+        cost_scaling[61] = 0.01;
+        cost_scaling[62] = 0.01;
+        cost_scaling[63] = 0.01;
+        cost_scaling[64] = 0.01;
+        cost_scaling[65] = 0.01;
+        cost_scaling[66] = 0.01;
+        cost_scaling[67] = 0.01;
+        cost_scaling[68] = 0.01;
+        cost_scaling[69] = 0.01;
+        cost_scaling[70] = 0.01;
+        cost_scaling[71] = 0.01;
+        cost_scaling[72] = 0.01;
+        cost_scaling[73] = 0.01;
+        cost_scaling[74] = 0.01;
+        cost_scaling[75] = 0.01;
+        cost_scaling[76] = 0.01;
+        cost_scaling[77] = 0.01;
+        cost_scaling[78] = 0.01;
+        cost_scaling[79] = 0.01;
+        cost_scaling[80] = 0.01;
+        cost_scaling[81] = 0.01;
+        cost_scaling[82] = 0.01;
+        cost_scaling[83] = 0.01;
+        cost_scaling[84] = 0.01;
+        cost_scaling[85] = 0.01;
+        cost_scaling[86] = 0.01;
+        cost_scaling[87] = 0.01;
+        cost_scaling[88] = 0.01;
+        cost_scaling[89] = 0.01;
+        cost_scaling[90] = 0.01;
+        cost_scaling[91] = 0.01;
+        cost_scaling[92] = 0.01;
+        cost_scaling[93] = 0.01;
+        cost_scaling[94] = 0.01;
+        cost_scaling[95] = 0.01;
+        cost_scaling[96] = 0.01;
+        cost_scaling[97] = 0.01;
+        cost_scaling[98] = 0.01;
+        cost_scaling[99] = 0.01;
+        cost_scaling[100] = 0.01;
+        cost_scaling[101] = 0.01;
+        cost_scaling[102] = 0.01;
+        cost_scaling[103] = 0.01;
+        cost_scaling[104] = 0.01;
+        cost_scaling[105] = 0.01;
+        cost_scaling[106] = 0.01;
+        cost_scaling[107] = 0.01;
+        cost_scaling[108] = 0.01;
+        cost_scaling[109] = 0.01;
+        cost_scaling[110] = 0.01;
+        cost_scaling[111] = 0.01;
+        cost_scaling[112] = 0.01;
+        cost_scaling[113] = 0.01;
+        cost_scaling[114] = 0.01;
+        cost_scaling[115] = 0.01;
+        cost_scaling[116] = 0.01;
+        cost_scaling[117] = 0.01;
+        cost_scaling[118] = 0.01;
+        cost_scaling[119] = 0.01;
+        cost_scaling[120] = 0.01;
+        cost_scaling[121] = 0.01;
+        cost_scaling[122] = 0.01;
+        cost_scaling[123] = 0.01;
+        cost_scaling[124] = 0.01;
+        cost_scaling[125] = 0.01;
+        cost_scaling[126] = 0.01;
+        cost_scaling[127] = 0.01;
+        cost_scaling[128] = 0.01;
+        cost_scaling[129] = 0.01;
+        cost_scaling[130] = 0.01;
+        cost_scaling[131] = 0.01;
+        cost_scaling[132] = 0.01;
+        cost_scaling[133] = 0.01;
+        cost_scaling[134] = 0.01;
+        cost_scaling[135] = 0.01;
+        cost_scaling[136] = 0.01;
+        cost_scaling[137] = 0.01;
+        cost_scaling[138] = 0.01;
+        cost_scaling[139] = 0.01;
+        cost_scaling[140] = 0.01;
+        cost_scaling[141] = 0.01;
+        cost_scaling[142] = 0.01;
+        cost_scaling[143] = 0.01;
+        cost_scaling[144] = 0.01;
+        cost_scaling[145] = 0.01;
+        cost_scaling[146] = 0.01;
+        cost_scaling[147] = 0.01;
+        cost_scaling[148] = 0.01;
+        cost_scaling[149] = 0.01;
+        cost_scaling[150] = 0.01;
+        cost_scaling[151] = 0.01;
+        cost_scaling[152] = 0.01;
+        cost_scaling[153] = 0.01;
+        cost_scaling[154] = 0.01;
+        cost_scaling[155] = 0.01;
+        cost_scaling[156] = 0.01;
+        cost_scaling[157] = 0.01;
+        cost_scaling[158] = 0.01;
+        cost_scaling[159] = 0.01;
+        cost_scaling[160] = 0.01;
+        cost_scaling[161] = 0.01;
+        cost_scaling[162] = 0.01;
+        cost_scaling[163] = 0.01;
+        cost_scaling[164] = 0.01;
+        cost_scaling[165] = 0.01;
+        cost_scaling[166] = 0.01;
+        cost_scaling[167] = 0.01;
+        cost_scaling[168] = 0.01;
+        cost_scaling[169] = 0.01;
+        cost_scaling[170] = 0.01;
+        cost_scaling[171] = 0.01;
+        cost_scaling[172] = 0.01;
+        cost_scaling[173] = 0.01;
+        cost_scaling[174] = 0.01;
+        cost_scaling[175] = 0.01;
+        cost_scaling[176] = 0.01;
+        cost_scaling[177] = 0.01;
+        cost_scaling[178] = 0.01;
+        cost_scaling[179] = 0.01;
+        cost_scaling[180] = 0.01;
+        cost_scaling[181] = 0.01;
+        cost_scaling[182] = 0.01;
+        cost_scaling[183] = 0.01;
+        cost_scaling[184] = 0.01;
+        cost_scaling[185] = 0.01;
+        cost_scaling[186] = 0.01;
+        cost_scaling[187] = 0.01;
+        cost_scaling[188] = 0.01;
+        cost_scaling[189] = 0.01;
+        cost_scaling[190] = 0.01;
+        cost_scaling[191] = 0.01;
+        cost_scaling[192] = 0.01;
+        cost_scaling[193] = 0.01;
+        cost_scaling[194] = 0.01;
+        cost_scaling[195] = 0.01;
+        cost_scaling[196] = 0.01;
+        cost_scaling[197] = 0.01;
+        cost_scaling[198] = 0.01;
+        cost_scaling[199] = 0.01;
+        cost_scaling[200] = 0.01;
+        cost_scaling[201] = 0.01;
+        cost_scaling[202] = 0.01;
+        cost_scaling[203] = 0.01;
+        cost_scaling[204] = 0.01;
+        cost_scaling[205] = 0.01;
+        cost_scaling[206] = 0.01;
+        cost_scaling[207] = 0.01;
+        cost_scaling[208] = 0.01;
+        cost_scaling[209] = 0.01;
+        cost_scaling[210] = 0.01;
+        cost_scaling[211] = 0.01;
+        cost_scaling[212] = 0.01;
+        cost_scaling[213] = 0.01;
+        cost_scaling[214] = 0.01;
+        cost_scaling[215] = 0.01;
+        cost_scaling[216] = 0.01;
+        cost_scaling[217] = 0.01;
+        cost_scaling[218] = 0.01;
+        cost_scaling[219] = 0.01;
+        cost_scaling[220] = 0.01;
+        cost_scaling[221] = 0.01;
+        cost_scaling[222] = 0.01;
+        cost_scaling[223] = 0.01;
+        cost_scaling[224] = 0.01;
+        cost_scaling[225] = 0.01;
+        cost_scaling[226] = 0.01;
+        cost_scaling[227] = 0.01;
+        cost_scaling[228] = 0.01;
+        cost_scaling[229] = 0.01;
+        cost_scaling[230] = 0.01;
+        cost_scaling[231] = 0.01;
+        cost_scaling[232] = 0.01;
+        cost_scaling[233] = 0.01;
+        cost_scaling[234] = 0.01;
+        cost_scaling[235] = 0.01;
+        cost_scaling[236] = 0.01;
+        cost_scaling[237] = 0.01;
+        cost_scaling[238] = 0.01;
+        cost_scaling[239] = 0.01;
+        cost_scaling[240] = 0.01;
+        cost_scaling[241] = 0.01;
+        cost_scaling[242] = 0.01;
+        cost_scaling[243] = 0.01;
+        cost_scaling[244] = 0.01;
+        cost_scaling[245] = 0.01;
+        cost_scaling[246] = 0.01;
+        cost_scaling[247] = 0.01;
+        cost_scaling[248] = 0.01;
+        cost_scaling[249] = 0.01;
+        cost_scaling[250] = 0.01;
+        cost_scaling[251] = 0.01;
+        cost_scaling[252] = 0.01;
+        cost_scaling[253] = 0.01;
+        cost_scaling[254] = 0.01;
+        cost_scaling[255] = 0.01;
+        cost_scaling[256] = 0.01;
+        cost_scaling[257] = 0.01;
+        cost_scaling[258] = 0.01;
+        cost_scaling[259] = 0.01;
+        cost_scaling[260] = 0.01;
+        cost_scaling[261] = 0.01;
+        cost_scaling[262] = 0.01;
+        cost_scaling[263] = 0.01;
+        cost_scaling[264] = 0.01;
+        cost_scaling[265] = 0.01;
+        cost_scaling[266] = 0.01;
+        cost_scaling[267] = 0.01;
+        cost_scaling[268] = 0.01;
+        cost_scaling[269] = 0.01;
+        cost_scaling[270] = 0.01;
+        cost_scaling[271] = 0.01;
+        cost_scaling[272] = 0.01;
+        cost_scaling[273] = 0.01;
+        cost_scaling[274] = 0.01;
+        cost_scaling[275] = 0.01;
+        cost_scaling[276] = 0.01;
+        cost_scaling[277] = 0.01;
+        cost_scaling[278] = 0.01;
+        cost_scaling[279] = 0.01;
+        cost_scaling[280] = 0.01;
+        cost_scaling[281] = 0.01;
+        cost_scaling[282] = 0.01;
+        cost_scaling[283] = 0.01;
+        cost_scaling[284] = 0.01;
+        cost_scaling[285] = 0.01;
+        cost_scaling[286] = 0.01;
+        cost_scaling[287] = 0.01;
+        cost_scaling[288] = 0.01;
+        cost_scaling[289] = 0.01;
+        cost_scaling[290] = 0.01;
+        cost_scaling[291] = 0.01;
+        cost_scaling[292] = 0.01;
+        cost_scaling[293] = 0.01;
+        cost_scaling[294] = 0.01;
+        cost_scaling[295] = 0.01;
+        cost_scaling[296] = 0.01;
+        cost_scaling[297] = 0.01;
+        cost_scaling[298] = 0.01;
+        cost_scaling[299] = 0.01;
+        cost_scaling[300] = 1;
         for (int i = 0; i <= N; i++)
         {
             ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "scaling", &cost_scaling[i]);
@@ -539,6 +818,10 @@ void dynamics_acados_setup_nlp_in(dynamics_solver_capsule* capsule, const int N,
     idxbx0[5] = 5;
     idxbx0[6] = 6;
     idxbx0[7] = 7;
+    idxbx0[8] = 8;
+    idxbx0[9] = 9;
+    idxbx0[10] = 10;
+    idxbx0[11] = 11;
 
     double* lubx0 = calloc(2*NBX0, sizeof(double));
     double* lbx0 = lubx0;
@@ -551,7 +834,7 @@ void dynamics_acados_setup_nlp_in(dynamics_solver_capsule* capsule, const int N,
     free(idxbx0);
     free(lubx0);
     // idxbxe_0
-    int* idxbxe_0 = malloc(8 * sizeof(int));
+    int* idxbxe_0 = malloc(12 * sizeof(int));
     idxbxe_0[0] = 0;
     idxbxe_0[1] = 1;
     idxbxe_0[2] = 2;
@@ -560,6 +843,10 @@ void dynamics_acados_setup_nlp_in(dynamics_solver_capsule* capsule, const int N,
     idxbxe_0[5] = 5;
     idxbxe_0[6] = 6;
     idxbxe_0[7] = 7;
+    idxbxe_0[8] = 8;
+    idxbxe_0[9] = 9;
+    idxbxe_0[10] = 10;
+    idxbxe_0[11] = 11;
     ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, 0, "idxbxe", idxbxe_0);
     free(idxbxe_0);
 
@@ -575,12 +862,37 @@ void dynamics_acados_setup_nlp_in(dynamics_solver_capsule* capsule, const int N,
     int* idxbu = malloc(NBU * sizeof(int));
     idxbu[0] = 0;
     idxbu[1] = 1;
+    idxbu[2] = 2;
+    idxbu[3] = 3;
+    idxbu[4] = 4;
+    idxbu[5] = 5;
+    idxbu[6] = 6;
+    idxbu[7] = 7;
+    idxbu[8] = 8;
+    idxbu[9] = 9;
     double* lubu = calloc(2*NBU, sizeof(double));
     double* lbu = lubu;
     double* ubu = lubu + NBU;
+    lbu[0] = -1000;
     ubu[0] = 1000;
     lbu[1] = -1000;
     ubu[1] = 1000;
+    lbu[2] = -1000;
+    ubu[2] = 1000;
+    lbu[3] = -1000;
+    ubu[3] = 1000;
+    lbu[4] = -1000;
+    ubu[4] = 1000;
+    lbu[5] = -1000;
+    ubu[5] = 1000;
+    lbu[6] = -1000;
+    ubu[6] = 1000;
+    lbu[7] = -1000;
+    ubu[7] = 1000;
+    lbu[8] = -1000;
+    ubu[8] = 1000;
+    lbu[9] = -1000;
+    ubu[9] = 1000;
 
     for (int i = 0; i < N; i++)
     {
@@ -683,7 +995,7 @@ static void dynamics_acados_create_set_opts(dynamics_solver_capsule* capsule)
     for (int i = 0; i < N; i++)
         ocp_nlp_solver_opts_set_at_stage(nlp_config, nlp_opts, i, "dynamics_num_stages", &sim_method_num_stages);
 
-    int newton_iter_val = 20;
+    int newton_iter_val = 3;
     for (int i = 0; i < N; i++)
         ocp_nlp_solver_opts_set_at_stage(nlp_config, nlp_opts, i, "dynamics_newton_iter", &newton_iter_val);
 
@@ -700,7 +1012,7 @@ static void dynamics_acados_create_set_opts(dynamics_solver_capsule* capsule)
     ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "levenberg_marquardt", &levenberg_marquardt);
 
     /* options QP solver */
-    int qp_solver_cond_N;const int qp_solver_cond_N_ori = 20;
+    int qp_solver_cond_N;const int qp_solver_cond_N_ori = 300;
     qp_solver_cond_N = N < qp_solver_cond_N_ori ? N : qp_solver_cond_N_ori; // use the minimum value here
     ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "qp_cond_N", &qp_solver_cond_N);
     double reg_epsilon = 0.0001;
@@ -711,11 +1023,6 @@ static void dynamics_acados_create_set_opts(dynamics_solver_capsule* capsule)
 
     bool store_iterates = false;
     ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "store_iterates", &store_iterates);
-    int log_primal_step_norm = false;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "log_primal_step_norm", &log_primal_step_norm);
-
-    double nlp_solver_tol_min_step_norm = 0;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "tol_min_step_norm", &nlp_solver_tol_min_step_norm);
     // set HPIPM mode: should be done before setting other QP solver options
     ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "qp_hpipm_mode", "BALANCE");
 
@@ -727,37 +1034,17 @@ static void dynamics_acados_create_set_opts(dynamics_solver_capsule* capsule)
 
 
 
-    // set SQP specific options
-    double nlp_solver_tol_stat = 0.1;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "tol_stat", &nlp_solver_tol_stat);
+    int as_rti_iter = 1;
+    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "as_rti_iter", &as_rti_iter);
 
-    double nlp_solver_tol_eq = 0.1;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "tol_eq", &nlp_solver_tol_eq);
+    int as_rti_level = 4;
+    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "as_rti_level", &as_rti_level);
 
-    double nlp_solver_tol_ineq = 0.1;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "tol_ineq", &nlp_solver_tol_ineq);
+    int rti_log_residuals = 0;
+    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "rti_log_residuals", &rti_log_residuals);
 
-    double nlp_solver_tol_comp = 0.1;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "tol_comp", &nlp_solver_tol_comp);
-
-    int nlp_solver_max_iter = 50;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "max_iter", &nlp_solver_max_iter);
-
-    // set options for adaptive Levenberg-Marquardt Update
-    bool with_adaptive_levenberg_marquardt = false;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "with_adaptive_levenberg_marquardt", &with_adaptive_levenberg_marquardt);
-
-    double adaptive_levenberg_marquardt_lam = 5;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "adaptive_levenberg_marquardt_lam", &adaptive_levenberg_marquardt_lam);
-
-    double adaptive_levenberg_marquardt_mu_min = 0.0000000000000001;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "adaptive_levenberg_marquardt_mu_min", &adaptive_levenberg_marquardt_mu_min);
-
-    double adaptive_levenberg_marquardt_mu0 = 0.001;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "adaptive_levenberg_marquardt_mu0", &adaptive_levenberg_marquardt_mu0);
-
-    bool eval_residual_at_max_iter = false;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "eval_residual_at_max_iter", &eval_residual_at_max_iter);
+    int rti_log_only_available_residuals = 0;
+    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "rti_log_only_available_residuals", &rti_log_only_available_residuals);
 
     int qp_solver_iter_max = 25;
     ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "qp_iter_max", &qp_solver_iter_max);
@@ -959,7 +1246,7 @@ int dynamics_acados_update_params(dynamics_solver_capsule* capsule, int stage, d
 {
     int solver_status = 0;
 
-    int casadi_np = 4;
+    int casadi_np = 3;
     if (casadi_np != np) {
         printf("acados_update_params: trying to set %i parameters for external functions."
             " External function has %i parameters. Exiting.\n", np, casadi_np);
@@ -1202,29 +1489,19 @@ void dynamics_acados_print_stats(dynamics_solver_capsule* capsule)
     ocp_nlp_get(capsule->nlp_solver, "stat_m", &stat_m);
 
 
-    double stat[600];
+    double stat[1200];
     ocp_nlp_get(capsule->nlp_solver, "statistics", stat);
 
     int nrow = nlp_iter+1 < stat_m ? nlp_iter+1 : stat_m;
 
 
-    printf("iter\tres_stat\tres_eq\t\tres_ineq\tres_comp\tqp_stat\tqp_iter\talpha");
-    if (stat_n > 8)
-        printf("\t\tqp_res_stat\tqp_res_eq\tqp_res_ineq\tqp_res_comp");
-    printf("\n");
+    printf("iter\tqp_stat\tqp_iter\n");
     for (int i = 0; i < nrow; i++)
     {
         for (int j = 0; j < stat_n + 1; j++)
         {
-            if (j == 0 || j == 5 || j == 6)
-            {
-                tmp_int = (int) stat[i + j * nrow];
-                printf("%d\t", tmp_int);
-            }
-            else
-            {
-                printf("%e\t", stat[i + j * nrow]);
-            }
+            tmp_int = (int) stat[i + j * nrow];
+            printf("%d\t", tmp_int);
         }
         printf("\n");
     }

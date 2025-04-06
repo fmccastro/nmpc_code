@@ -98,13 +98,13 @@ if __name__ == '__main__':
 
     pub_nodePeriod = rospy.Publisher( '/node/fastMarching/period', Float32, queue_size = 1 )
 
-    pub_ref = rospy.Publisher('/vehicle/reference', Float32MultiArray, queue_size = 1)
+    pub_ref = rospy.Publisher('/vehicle/reference', referencePath, queue_size = 1)
 
     gt_baseLinkIndex, _, _, _, _ = common._getLinksIndex( common.gazeboLinkStates )
 
     print("[fastMarching.py] Simulation cycle is running!")
 
-    msg = Float32MultiArray()
+    msg = referencePath()
 
     while not rospy.is_shutdown():
         try:
@@ -113,15 +113,16 @@ if __name__ == '__main__':
             currentPose = common.true_pose3D.pose
 
             startingPoint = (currentPose.x, currentPose.y)
-            path_settings = SETTINGS(nrows, ncols, maxCycles, startingPoint, goalPoint, 0, pathGap, goalCheck)
+            path_settings = SETTINGS(nrows, ncols, maxCycles + 1, startingPoint, goalPoint, 0, pathGap, goalCheck)
             
             #   Get optimal path from selected potential flow
             ref_e_c = planner_c._getPath2Follow(potentialFlow_c, path_settings)
 
             #   Smooth path
-            smoothPath = planner._smoothPath(ref_e_c)
+            smoothPath = planner._smoothPath(ref_e_c, 0.35, maxCycles)
 
-            msg.data = smoothPath
+            msg.reference = smoothPath
+            msg.startingPose = currentPose
 
             planner_c._freePath(ref_e_c)
 

@@ -75,7 +75,7 @@ int dynamics_acados_sim_create(dynamics_sim_solver_capsule * capsule)
     const int np = DYNAMICS_NP;
     bool tmp_bool;
 
-    double Tsim = 0.04;
+    double Tsim = 0.01;
 
     external_function_opts ext_fun_opts;
     external_function_opts_set_to_default(&ext_fun_opts);
@@ -140,7 +140,7 @@ int dynamics_acados_sim_create(dynamics_sim_solver_capsule * capsule)
     // sim opts
     sim_opts *dynamics_sim_opts = sim_opts_create(dynamics_sim_config, dynamics_sim_dims);
     capsule->acados_sim_opts = dynamics_sim_opts;
-    int tmp_int = 20;
+    int tmp_int = 3;
     sim_opts_set(dynamics_sim_config, dynamics_sim_opts, "newton_iter", &tmp_int);
     double tmp_double = 0;
     sim_opts_set(dynamics_sim_config, dynamics_sim_opts, "newton_tol", &tmp_double);
@@ -187,7 +187,6 @@ int dynamics_acados_sim_create(dynamics_sim_solver_capsule * capsule)
     p[0] = 1;
     p[1] = 1;
     p[2] = 1;
-    p[3] = 1;
 
     dynamics_acados_sim_update_params(capsule, p, np);
     free(p);
@@ -195,8 +194,8 @@ int dynamics_acados_sim_create(dynamics_sim_solver_capsule * capsule)
 
     /* initialize input */
     // x
-    double x0[8];
-    for (int ii = 0; ii < 8; ii++)
+    double x0[12];
+    for (int ii = 0; ii < 12; ii++)
         x0[ii] = 0.0;
 
     sim_in_set(dynamics_sim_config, dynamics_sim_dims,
@@ -204,19 +203,19 @@ int dynamics_acados_sim_create(dynamics_sim_solver_capsule * capsule)
 
 
     // u
-    double u0[2];
-    for (int ii = 0; ii < 2; ii++)
+    double u0[10];
+    for (int ii = 0; ii < 10; ii++)
         u0[ii] = 0.0;
 
     sim_in_set(dynamics_sim_config, dynamics_sim_dims,
                dynamics_sim_in, "u", u0);
 
     // S_forw
-    double S_forw[80];
-    for (int ii = 0; ii < 80; ii++)
+    double S_forw[264];
+    for (int ii = 0; ii < 264; ii++)
         S_forw[ii] = 0.0;
-    for (int ii = 0; ii < 8; ii++)
-        S_forw[ii + ii * 8 ] = 1.0;
+    for (int ii = 0; ii < 12; ii++)
+        S_forw[ii + ii * 12 ] = 1.0;
 
 
     sim_in_set(dynamics_sim_config, dynamics_sim_dims,

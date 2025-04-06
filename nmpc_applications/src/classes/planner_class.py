@@ -1662,7 +1662,7 @@ class Planner(Common):
 
         return np.array(path)
 
-    def _smoothPath(self, input):
+    def _smoothPath(self, input, end, maxCycles):
 
         """
             Convert result from C function call in Python into a Float32MultiArray msg type
@@ -1682,13 +1682,23 @@ class Planner(Common):
         # Fit a B-spline representation to the data
         tck, u = splprep( [ np.array(output_x), np.array(output_y) ], s = 0.1 )  # s is the smoothing factor
 
+        #tx = np.linspace(0, 1, len(output_x))
+        #ty = np.linspace(0, 1, len(output_y))
+
+        """csx = CubicSpline(tx, output_x)
+        csy = CubicSpline(ty, output_y)
+
+        t_smooth = np.linspace(0, end, maxCycles + 1)
+        x_smooth = csx(t_smooth)
+        y_smooth = csy(t_smooth)"""
+
         # Generate new points along the smooth curve
-        u_fine = np.linspace(0, 0.5, self.N + 1)  # Generate 100 smooth points
+        u_fine = np.linspace(0, end, maxCycles + 1)
         x_smooth, y_smooth = splev(u_fine, tck)
 
         path2Follow_smooth = []
 
-        for _ in range(self.N):
+        for _ in range(maxCycles):
             yaw_smooth = math.atan2( y_smooth[_ + 1] - y_smooth[_], x_smooth[_ + 1] - x_smooth[_] )
             path2Follow_smooth += [x_smooth[_], y_smooth[_], yaw_smooth]
         

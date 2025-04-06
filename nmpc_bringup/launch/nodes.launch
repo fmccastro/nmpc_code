@@ -5,6 +5,7 @@
   <node name = "markers_path" pkg = "nmpc_applications" type = "markers_path.py" output = "screen" />
   <node name = "fastMarching" pkg = "nmpc_applications" type = "fastMarching.py" output = "screen" />
   <node name = "nmpc_kinematics" pkg = "nmpc_applications" type = "nmpc_kinematics.py" output = "screen" />
+  <node name = "nmpc_trajectory_gen" pkg = "nmpc_applications" type = "nmpc_trajectory_gen.py" output = "screen" />
   <node name = "nmpc_dynamics" pkg = "nmpc_applications" type = "nmpc_dynamics.py" output = "screen" />
   <!--<node name = "nmpc_wheelAllocation" pkg = "nmpc_applications" type = "nmpc_wheelAllocation.py" output = "screen" />-->
 </launch>
