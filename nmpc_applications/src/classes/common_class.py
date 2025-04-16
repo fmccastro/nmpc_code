@@ -88,7 +88,7 @@ class Common:
         2 -> add obstacle avoidance
         3 -> add parameter estimation
     """
-    simulationType = 0
+    simulationType = 1
 
     """
         Convex inner approximation iteration parameters
@@ -101,7 +101,7 @@ class Common:
     """
         Algorithm parameters
     """
-    Ts = 0.1                                                            #   Sampling Time
+    Ts = 0.02                                                           #   Sampling Time
     fixedTs = True                                                      #   Variable sampling time
     N = 50                                                              #   Control horizon
     maxCycles = 10                                                      #   Maximum number of cycles for look ahead point finder
@@ -164,13 +164,13 @@ class Common:
     """ Limits on the Robot's Controls """
     
     #   Kinematics control bounds
-    vx_lb = -1.0
-    vx_ub = 1.0
+    vx_lb = -0.5
+    vx_ub = 0.5
 
     wz_lb = -120 * math.pi / 180.0
     wz_ub = 120 * math.pi / 180.0
 
-    #
+    #   Trajectory bounds
     v_lb = [ -100.0, -1000.0, -1000.0 ]
     v_ub = [ 100.0, 1000.0, 1000.0 ]
 
@@ -223,7 +223,7 @@ class Common:
     Q_p_kin = 2 * np.diag( [ 1e-1, 1e-1, 0e0 ] )                                  
     Q_o_kin = 2 * np.diag( [ 0e0, 0e0, 1e0 ] )  
 
-    Q_vx_kin = 2 * 1e0     
+    Q_vx_kin = 2 * 1e0
     Q_wz_kin = 2 * 1e-1
 
     Q_p_kin_t = 2 * np.diag( [ 1e-1, 1e-1, 0e0 ] )                                  
@@ -233,37 +233,47 @@ class Common:
     Q_wz_kin_t = 2 * 2e-1
     ##########################################
 
-    #   Trajectory generation costs     ######
-    Q_p_traj = 2 * np.diag( [ 1e0, 1e0, 0e0 ] )                                  
-    Q_o_traj = 2 * np.diag( [ 0e0, 0e0, 1e1 ] )  
+    #   Simplified dynamics costs   ##########
+    Q_p_simple_dyn = 2 * np.diag( [ 3e0, 3e0, 1e-2] )
+    Q_o_simple_dyn = 2 * np.diag( [ 1e-2, 1e-2, 1e2 ] )  
 
-    Q_v_traj = 2 * np.diag( [ 1e-2, 1e-2, 1e-2 ] )                                 
-    Q_w_traj = 2 * np.diag( [ 1e-2, 1e-2, 1e-2 ] )
+    Q_vx_simple_dyn = 2 * 1e0 
+    Q_vy_simple_dyn = 2 * 1e2
+    Q_wz_simple_dyn = 2 * 1e0
 
-    Q_p_traj_t = 2 * np.diag( [ 1e0, 1e0, 0e0 ] )                                  
-    Q_o_traj_t = 2 * np.diag( [ 0e0, 0e0, 1e1 ] )  
+    Q_p_simple_dyn_t = 2 * np.diag( [ 3e0, 3e0, 1e-2 ] )                                  
+    Q_o_simple_dyn_t = 2 * np.diag( [ 1e-2, 1e-2, 1e2 ] )  
 
-    Q_v_traj_t = 2 * np.diag( [ 1e-2, 1e0, 1e0] )                                 
-    Q_w_traj_t = 2 * np.diag( [ 1e-2, 1e-2, 1e-2 ] ) 
+    Q_vx_simple_dyn_t = 2 * 1e0 
+    Q_vy_simple_dyn_t = 2 * 1e2
+    Q_wz_simple_dyn_t = 2 * 1e0 
 
-    Q_f_traj = 2 * np.diag( [1e-5] * 10 )
+    Q_f_simple_dyn = 2 * np.diag( [1e-2, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2] )
+
+    Q_icr = 2 * np.diag( [1e-2, 1e-2, 1e-2] )
+
+    Q_m_dyn = 2 * np.diag( [1e2, 1e2] )
     ##########################################
-    
-    #   Dynamics costs  ######################
-    Q_p_dyn = 2 * np.diag( [ 0e0, 0e0, 0e0 ] )                                  
-    Q_o_dyn = 2 * np.diag( [ 0e0, 0e0, 0e0 ] )  
 
-    Q_v_dyn = 2 * np.diag( [ 1e0, 1e0, 1e0 ] )                                 
-    Q_w_dyn = 2 * np.diag( [ 0e0, 0e0, 1e0 ] )
+    #   Dynamics costs     ######
+    Q_p_dyn = 2 * np.diag( [ 3e0, 3e0, 1e-2] )
+    Q_o_dyn = 2 * np.diag( [ 1e-2, 1e-2, 1e2 ] )  
 
-    Q_p_dyn_t = 2 * np.diag( [ 0e0, 0e0, 0e0 ] )                                  
-    Q_o_dyn_t = 2 * np.diag( [ 0e0, 0e0, 0e0 ] )  
+    Q_v_dyn = 2 * np.diag( [ 1e0, 1e1, 1e1 ] )                                 
+    Q_w_dyn = 2 * np.diag( [ 1e1, 1e1, 1e0 ] )
 
-    Q_v_dyn_t = 2 * np.diag( [ 1e0, 1e0, 1e0 ] )                                 
-    Q_w_dyn_t = 2 * np.diag( [ 0e0, 0e0, 1e0 ] ) 
+    Q_p_dyn_t = 2 * np.diag( [ 3e0, 3e0, 1e-2 ] )                                  
+    Q_o_dyn_t = 2 * np.diag( [ 1e-2, 1e-2, 1e2 ] )  
 
-    Q_f_dyn = 2 * np.diag( [1e-1] * 10 )
-    ##########################################      
+    Q_v_dyn_t = 2 * np.diag( [ 1e0, 1e1, 1e1 ] )                                   
+    Q_w_dyn_t = 2 * np.diag( [ 1e1, 1e1, 1e0 ] )    
+
+    Q_f_dyn = 2 * np.diag( [1e1, 1e1, 1e1, 1e1, 1e1, 1e1, 1e1, 1e1, 1e-1, 1e-1, 1e-1, 1e-1 ] )
+
+    Q_icr = 2 * np.diag( [1e-2, 1e-2, 1e-2] )
+
+    Q_m_dyn = 2 * np.diag( [1e2, 1e2] )
+    ##########################################     
 
     #   SQP or SQP_RTI
     nlp_solver_type = 'SQP_RTI'                                                                  

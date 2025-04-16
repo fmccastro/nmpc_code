@@ -119,7 +119,7 @@ if __name__ == '__main__':
             ref_e_c = planner_c._getPath2Follow(potentialFlow_c, path_settings)
 
             #   Smooth path
-            smoothPath = planner._smoothPath(ref_e_c, 0.35, maxCycles)
+            smoothPath = planner._smoothPath(ref_e_c, 0.3, maxCycles)
 
             msg.reference = smoothPath
             msg.startingPose = currentPose

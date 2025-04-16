@@ -46,14 +46,14 @@ if __name__ == '__main__':
     rospy.Subscriber( '/vehicle/nmpc_kinematics/horizonVelocity', Float32MultiArray, common._multiArrayCallback, 2)      #   '/vehicle/nmpc_kinematics/horizonVelocity' -> topic which collects control horizon from kinematics problem
     rospy.Subscriber( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame, common._callback, 6 )            #   '/vehicle/trueVelocity_bodyFrame' -> topic which collect robot links perfect velocity
     rospy.Subscriber( '/vehicle/true_pose3D', pose3DStamped, common._callback, 3 )                                       #   '/vehicle/truePose' -> topic which collects robot perfect pose
-    rospy.Subscriber( '/vehicle/reference', Float32MultiArray, common._multiArrayCallback, 0 )                           #   '/vehicle/reference' -> topic which collects the reference path 
+    rospy.Subscriber( '/vehicle/reference', referencePath, common._multiArrayCallback, 0 )                           #   '/vehicle/reference' -> topic which collects the reference path 
 
     rospy.wait_for_message( '/gazebo/link_states', LinkStates )
     rospy.wait_for_message( '/vehicle/nmpc_kinematics/horizonPath', Float32MultiArray )
     rospy.wait_for_message( '/vehicle/nmpc_kinematics/horizonVelocity', Float32MultiArray )
     rospy.wait_for_message( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame )
     rospy.wait_for_message( '/vehicle/true_pose3D', pose3DStamped )
-    rospy.wait_for_message( '/vehicle/reference', Float32MultiArray )
+    rospy.wait_for_message( '/vehicle/reference', referencePath )
 
     #   Subscriptions
     rospy.Subscriber( '/joint_states', JointState, common._callback, 8 )                                                    #   '/vehicle/joint_states' -> topic which collects the joint position and velocity ( linear or angular )

@@ -132,33 +132,32 @@ if __name__ == '__main__':
 
                     initialPose = path2Follow.startingPose
                     reference = list(path2Follow.reference)
-
-                    print(initialPose)
-                    print(reference)
                     
-                    model._setInitialGuess(common.N + 1, path2Follow[0:6], reference)
+                    model._setInitialGuess(common.N + 1, [initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw], reference)
 
                     input("[nmpc_kinematics.py] Wait for input to start simulation cycle.")
 
                 if( common.nlp_solver_type == 'SQP' ):
                     path2Follow = common.referencePath
+
                     initialPose = path2Follow.startingPose
                     reference = path2Follow.reference
                     
                     currentVelocity = common.true_velocity_bodyFrame.velocity[0]
 
-                    next_vx, next_wz = model._solve(path2Follow[0:6], path2Follow)
+                    next_vx, next_wz = model._solve([initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw], reference)
 
                 elif( common.nlp_solver_type == 'SQP_RTI' ):
                     model._preparation_sqp_rti()
 
                     path2Follow = common.referencePath
+                    
                     initialPose = path2Follow.startingPose
                     reference = path2Follow.reference
 
                     currentVelocity = common.true_velocity_bodyFrame.velocity[0]
 
-                    next_vx, next_wz = model._feedback_sqp_rti(path2Follow[0:6], path2Follow)
+                    next_vx, next_wz = model._feedback_sqp_rti([initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw], reference)
 
                 solutionX, solutionU, cost, optTime = model._data()
 

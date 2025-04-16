@@ -105,7 +105,10 @@ if __name__ == '__main__':
 
     while( not rospy.is_shutdown() ):
         try:
-            referencePath = list(common.referencePath.data)
+            path2Follow = common.referencePath
+
+            initialPose = path2Follow.startingPose
+            reference = path2Follow.reference
 
             if( common.simulationType == 0 ):
                 kinematicsHorizonPath = list(common.horizonPath.data)
@@ -121,8 +124,8 @@ if __name__ == '__main__':
             #   Collect raw reference path(point only without orientation) from fast marching algorithm
             for _index in range(common.N + 1):
                 markerReferencePath.header.stamp = rospy.Time.now()
-                markerReferencePath.points += [ Point(referencePath[_index * 3],\
-                                                      referencePath[_index * 3 + 1], 0) ]
+                markerReferencePath.points += [ Point(reference[_index * 3],\
+                                                      reference[_index * 3 + 1], 0) ]
 
                 markerKinematicsHorizonPath.header.stamp = rospy.Time.now()
 

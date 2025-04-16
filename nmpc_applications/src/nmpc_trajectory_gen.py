@@ -53,11 +53,11 @@ if __name__ == '__main__':
     #   Subscriptions
     rospy.Subscriber( '/gazebo/link_states', LinkStates, common._callback, 0 )                                              #   '/gazebo/link_states' -> topic which collects ground truth
     rospy.Subscriber( '/joint_states', JointState, common._callback, 8 )                                                    #   '/vehicle/joint_states' -> topic which collects the joint position and velocity ( linear or angular )  
-    rospy.Subscriber( '/vehicle/reference', Float32MultiArray, common._multiArrayCallback, 0 )                              #   '/vehicle/reference' -> topic which collects the reference path                                                   
+    rospy.Subscriber( '/vehicle/reference', referencePath, common._multiArrayCallback, 0 )                              #   '/vehicle/reference' -> topic which collects the reference path                                                   
 
     rospy.wait_for_message( '/joint_states', JointState )
     rospy.wait_for_message( '/gazebo/link_states', LinkStates )
-    rospy.wait_for_message( '/vehicle/reference', Float32MultiArray )
+    rospy.wait_for_message( '/vehicle/reference', referencePath )
 
     #   Services
     rospy.wait_for_service( '/gazebo/get_world_properties' )
@@ -113,6 +113,8 @@ if __name__ == '__main__':
                            'com2br': [d_br.transform.translation.x - robotInertia.com.x, d_br.transform.translation.y - robotInertia.com.y, d_br.transform.translation.z - robotInertia.com.z],\
                            'com2fr': [d_fr.transform.translation.x - robotInertia.com.x, d_fr.transform.translation.y - robotInertia.com.y, d_fr.transform.translation.z - robotInertia.com.z] }
             
+            print(com2wheels)
+
             #   Save com2wheels to file
             with open( common.results_folder + "com2wheels_" + common.robot + '.pickle', 'wb') as handle:
                 pickle.dump(com2wheels, handle, protocol = pickle.HIGHEST_PROTOCOL)

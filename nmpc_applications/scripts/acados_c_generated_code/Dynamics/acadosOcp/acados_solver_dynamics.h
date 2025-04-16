@@ -64,7 +64,7 @@
 #define DYNAMICS_NY0    0
 #define DYNAMICS_NY     0
 #define DYNAMICS_NYN    0
-#define DYNAMICS_N      300
+#define DYNAMICS_N      50
 #define DYNAMICS_NH     0
 #define DYNAMICS_NHN    0
 #define DYNAMICS_NH0    0

@@ -603,8 +603,8 @@ void kinematics_acados_setup_nlp_in(kinematics_solver_capsule* capsule, const in
     double* lubu = calloc(2*NBU, sizeof(double));
     double* lbu = lubu;
     double* ubu = lubu + NBU;
-    lbu[0] = -1;
-    ubu[0] = 1;
+    lbu[0] = -0.5;
+    ubu[0] = 0.5;
     lbu[1] = -2.0943951023931953;
     ubu[1] = 2.0943951023931953;
 
