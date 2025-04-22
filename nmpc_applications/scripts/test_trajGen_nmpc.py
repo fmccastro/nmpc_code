@@ -93,11 +93,11 @@ if __name__ == '__main__':
         moment_fr = np.cross( np.array( com2contact['com2fr'] ), np.array( [ solutionU[3], solutionU[7], solutionU[11] ] ) )
 
         if( i == 0 ):
-            forces = solutionU[0:12]
+            forces = solutionU[0:2]
             moments = moment_bl + moment_fl + moment_br + moment_fr
         
         elif( i > 0 ):
-            forces = np.vstack( (forces, solutionU[0:12]) )
+            forces = np.vstack( (forces, solutionU[0:2]) )
             moments = np.vstack( ( moments, moment_bl + moment_fl + moment_br + moment_fr ) )
         
         cost_p += [cost_prep]
@@ -194,28 +194,18 @@ if __name__ == '__main__':
     plt.title('wz')
 
     fig, ax = plt.subplots()
-    ax.plot( np.arange(range_aux), forces[:, 0], label = 'fx_bl' )
-    ax.plot( np.arange(range_aux), forces[:, 1], label = 'fx_fl' )
-    ax.plot( np.arange(range_aux), forces[:, 2], label = 'fx_br' )
-    ax.plot( np.arange(range_aux), forces[:, 3], label = 'fx_fr' )
+    ax.plot( np.arange(range_aux), forces[:, 0], label = 'fx_l' )
+    ax.plot( np.arange(range_aux), forces[:, 1], label = 'fx_r' )
     ax.legend()
     ax.set_title('fx')
 
     fig1, ax1 = plt.subplots()
-    ax1.plot( np.arange(range_aux), forces[:, 4], label = 'fy_bl' )
-    ax1.plot( np.arange(range_aux), forces[:, 5], label = 'fy_fl' )
-    ax1.plot( np.arange(range_aux), forces[:, 6], label = 'fy_br' )
-    ax1.plot( np.arange(range_aux), forces[:, 7], label = 'fy_fr' )
+    ax1.plot( np.arange(range_aux), forces[:, 2], label = 'fy_bl' )
+    ax1.plot( np.arange(range_aux), forces[:, 3], label = 'fy_fl' )
+    ax1.plot( np.arange(range_aux), forces[:, 4], label = 'fy_br' )
+    ax1.plot( np.arange(range_aux), forces[:, 5], label = 'fy_fr' )
     ax1.legend()
     ax1.set_title('fy')
-
-    fig2, ax2 = plt.subplots()
-    line1 = ax2.plot( np.arange(range_aux), forces[:, 8], label='fz_bl' )
-    line2 = ax2.plot( np.arange(range_aux), forces[:, 9], label='fz_fl' )
-    line3 = ax2.plot( np.arange(range_aux), forces[:, 10], label='fz_br' )
-    line4 = ax2.plot( np.arange(range_aux), forces[:, 11], label='fz_fr' )
-    ax2.legend()
-    ax2.set_title('fz')
 
     plt.figure()
     plt.plot(np.arange(range_aux), moments[:, 0])

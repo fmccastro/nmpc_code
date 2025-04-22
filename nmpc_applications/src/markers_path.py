@@ -15,22 +15,24 @@ if __name__ == '__main__':
     rospy.init_node( 'markers', anonymous = True )
 
     pub_referencePath = rospy.Publisher('/markers/referencePath', Marker, queue_size = 1)
-    pub_kinHorizonPath = rospy.Publisher('/markers/kinematicsHorizonPath', Marker, queue_size = 1)
-    pub_dynHorizonPath = rospy.Publisher('/markers/dynamicsHorizonPath', Marker, queue_size = 1)
 
     rospy.Subscriber( '/vehicle/reference', referencePath, common._multiArrayCallback, 0 )                                    #   '/vehicle/reference' -> topic which collects the reference path                                                   
     rospy.wait_for_message( '/vehicle/reference', referencePath )
     
     if( common.simulationType == 0 ):
+        pub_kinHorizonPath = rospy.Publisher('/markers/kinematicsHorizonPath', Marker, queue_size = 1)
+
         rospy.Subscriber( '/vehicle/nmpc_kinematics/horizonPath', Float32MultiArray, common._multiArrayCallback, 1 )
         rospy.wait_for_message( '/vehicle/nmpc_kinematics/horizonPath', Float32MultiArray )
     
-    elif( common.simulationType == 1):
-        rospy.Subscriber( '/vehicle/nmpc_kinematics/horizonPath', Float32MultiArray, common._multiArrayCallback, 1 )
-        rospy.wait_for_message( '/vehicle/nmpc_kinematics/horizonPath', Float32MultiArray )
+    elif( common.simulationType >= 1):
+        pub_dynHorizonPath = rospy.Publisher('/markers/dynamicsHorizonPath', Marker, queue_size = 1)
+
+        """rospy.Subscriber( '/vehicle/nmpc_kinematics/horizonPath', Float32MultiArray, common._multiArrayCallback, 1 )
+        rospy.wait_for_message( '/vehicle/nmpc_kinematics/horizonPath', Float32MultiArray )"""
 
         rospy.Subscriber('/vehicle/nmpc_dynamics/horizonState', Float32MultiArray, common._multiArrayCallback, 2 )
-        #rospy.wait_for_message( '/vehicle/nmpc_dynamics/horizonState', Float32MultiArray )
+        rospy.wait_for_message( '/vehicle/nmpc_dynamics/horizonState', Float32MultiArray )
 
     #   Reference path marker (yellow cubes)
     markerReferencePath = Marker()
@@ -114,8 +116,8 @@ if __name__ == '__main__':
                 kinematicsHorizonPath = list(common.horizonPath.data)
             
             elif( common.simulationType == 1 ):
-                kinematicsHorizonPath = list(common.horizonPath.data)
-                #dynamicsHorizonPath = list(common.horizonVelocity.data)
+                #kinematicsHorizonPath = list(common.horizonPath.data)
+                dynamicsHorizonPath = list(common.horizonVelocity.data)
             
             markerReferencePath.points = []
             markerKinematicsHorizonPath.points = []
@@ -135,20 +137,20 @@ if __name__ == '__main__':
                                                                     kinematicsHorizonPath[_index * 6 + 2] ) ]
                 
                 elif( common.simulationType == 1 ):
-                    markerKinematicsHorizonPath.points += [ Point( kinematicsHorizonPath[_index * 12],\
+                    """markerKinematicsHorizonPath.points += [ Point( kinematicsHorizonPath[_index * 12],\
                                                                     kinematicsHorizonPath[_index * 12 + 1],\
-                                                                    kinematicsHorizonPath[_index * 12 + 2] ) ]
+                                                                    kinematicsHorizonPath[_index * 12 + 2] ) ]"""
                     
-                    """markerDynamicsHorizonPath.points += [ Point( dynamicsHorizonPath[_index * 12],\
-                                                                 dynamicsHorizonPath[_index * 12 + 1],\
-                                                                 dynamicsHorizonPath[_index * 12 + 2] ) ]"""
+                    markerDynamicsHorizonPath.points += [ Point( dynamicsHorizonPath[_index * 9],\
+                                                                 dynamicsHorizonPath[_index * 9 + 1],\
+                                                                 dynamicsHorizonPath[_index * 9 + 2] ) ]
 
             true_pose = common.true_pose3D
             markerTruePoseRobot.points += [ Point( true_pose.pose.x, true_pose.pose.y, true_pose.pose.z ) ]
             
             truePosePub.publish( markerTruePoseRobot )
             pub_referencePath.publish(markerReferencePath)
-            pub_kinHorizonPath.publish(markerKinematicsHorizonPath)
+            #pub_kinHorizonPath.publish(markerKinematicsHorizonPath)
             pub_dynHorizonPath.publish(markerDynamicsHorizonPath)
 
             index += 1

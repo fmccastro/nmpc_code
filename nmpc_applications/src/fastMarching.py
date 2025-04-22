@@ -84,7 +84,9 @@ if __name__ == '__main__':
     if( common.poseType == 0 ):
         rospy.Subscriber( '/gazebo/link_states', LinkStates, common._callback, 0 )                                           #   '/gazebo/link_states' -> topic which collects ground truth
         rospy.Subscriber( '/vehicle/true_pose3D', pose3DStamped, common._callback, 3 )                                       #   '/vehicle/truePose' -> topic which collects robot perfect pose
-        
+        rospy.Subscriber( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame, common._callback, 6 )            #   '/vehicle/trueVelocity_bodyFrame' -> topic which collect robot links perfect velocity
+
+        rospy.wait_for_message( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame )
         rospy.wait_for_message( '/gazebo/link_states', LinkStates )
         rospy.wait_for_message( '/vehicle/true_pose3D', pose3DStamped )
 
@@ -92,7 +94,9 @@ if __name__ == '__main__':
     if( common.poseType == 1 ):
         rospy.Subscriber( '/vehicle/true_pose3D', pose3DStamped, common._callback, 3 )                                       #   '/vehicle/truePose' -> topic which collects robot perfect pose
         rospy.Subscriber( '/vehicle/noisy_pose3D', pose3DStamped, common._callback, 4 )                                      #   '/vehicle/noisy_pose3D' -> topic which collects robot perfect pose
+        rospy.Subscriber( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame, common._callback, 6 )            #   '/vehicle/trueVelocity_bodyFrame' -> topic which collect robot links perfect velocity
 
+        rospy.wait_for_message( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame )
         rospy.wait_for_message( '/vehicle/true_pose3D', pose3DStamped )
         rospy.wait_for_message( '/vehicle/noisy_pose3D', pose3DStamped )
 
@@ -111,6 +115,7 @@ if __name__ == '__main__':
             start = time.time()
             
             currentPose = common.true_pose3D.pose
+            currentVelocity = common.true_velocity_bodyFrame.velocity[0]
 
             startingPoint = (currentPose.x, currentPose.y)
             path_settings = SETTINGS(nrows, ncols, maxCycles + 1, startingPoint, goalPoint, 0, pathGap, goalCheck)
@@ -123,6 +128,7 @@ if __name__ == '__main__':
 
             msg.reference = smoothPath
             msg.startingPose = currentPose
+            msg.startingVelocity = currentVelocity
 
             planner_c._freePath(ref_e_c)
 

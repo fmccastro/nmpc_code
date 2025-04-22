@@ -75,7 +75,7 @@ int simple_dynamics_acados_sim_create(simple_dynamics_sim_solver_capsule * capsu
     const int np = SIMPLE_DYNAMICS_NP;
     bool tmp_bool;
 
-    double Tsim = 0.02;
+    double Tsim = 0.1;
 
     external_function_opts ext_fun_opts;
     external_function_opts_set_to_default(&ext_fun_opts);

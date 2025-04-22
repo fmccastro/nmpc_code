@@ -474,63 +474,63 @@ void simple_dynamics_acados_setup_nlp_in(simple_dynamics_solver_capsule* capsule
     else
     {
         // set time_steps
-    double time_step = 0.02;
+    double time_step = 0.1;
         for (int i = 0; i < N; i++)
         {
             ocp_nlp_in_set(nlp_config, nlp_dims, nlp_in, i, "Ts", &time_step);
         }
         // set cost scaling
         double* cost_scaling = malloc((N+1)*sizeof(double));
-        cost_scaling[0] = 0.02;
-        cost_scaling[1] = 0.02;
-        cost_scaling[2] = 0.02;
-        cost_scaling[3] = 0.02;
-        cost_scaling[4] = 0.02;
-        cost_scaling[5] = 0.02;
-        cost_scaling[6] = 0.02;
-        cost_scaling[7] = 0.02;
-        cost_scaling[8] = 0.02;
-        cost_scaling[9] = 0.02;
-        cost_scaling[10] = 0.02;
-        cost_scaling[11] = 0.02;
-        cost_scaling[12] = 0.02;
-        cost_scaling[13] = 0.02;
-        cost_scaling[14] = 0.02;
-        cost_scaling[15] = 0.02;
-        cost_scaling[16] = 0.02;
-        cost_scaling[17] = 0.02;
-        cost_scaling[18] = 0.02;
-        cost_scaling[19] = 0.02;
-        cost_scaling[20] = 0.02;
-        cost_scaling[21] = 0.02;
-        cost_scaling[22] = 0.02;
-        cost_scaling[23] = 0.02;
-        cost_scaling[24] = 0.02;
-        cost_scaling[25] = 0.02;
-        cost_scaling[26] = 0.02;
-        cost_scaling[27] = 0.02;
-        cost_scaling[28] = 0.02;
-        cost_scaling[29] = 0.02;
-        cost_scaling[30] = 0.02;
-        cost_scaling[31] = 0.02;
-        cost_scaling[32] = 0.02;
-        cost_scaling[33] = 0.02;
-        cost_scaling[34] = 0.02;
-        cost_scaling[35] = 0.02;
-        cost_scaling[36] = 0.02;
-        cost_scaling[37] = 0.02;
-        cost_scaling[38] = 0.02;
-        cost_scaling[39] = 0.02;
-        cost_scaling[40] = 0.02;
-        cost_scaling[41] = 0.02;
-        cost_scaling[42] = 0.02;
-        cost_scaling[43] = 0.02;
-        cost_scaling[44] = 0.02;
-        cost_scaling[45] = 0.02;
-        cost_scaling[46] = 0.02;
-        cost_scaling[47] = 0.02;
-        cost_scaling[48] = 0.02;
-        cost_scaling[49] = 0.02;
+        cost_scaling[0] = 0.1;
+        cost_scaling[1] = 0.1;
+        cost_scaling[2] = 0.1;
+        cost_scaling[3] = 0.1;
+        cost_scaling[4] = 0.1;
+        cost_scaling[5] = 0.1;
+        cost_scaling[6] = 0.1;
+        cost_scaling[7] = 0.1;
+        cost_scaling[8] = 0.1;
+        cost_scaling[9] = 0.1;
+        cost_scaling[10] = 0.1;
+        cost_scaling[11] = 0.1;
+        cost_scaling[12] = 0.1;
+        cost_scaling[13] = 0.1;
+        cost_scaling[14] = 0.1;
+        cost_scaling[15] = 0.1;
+        cost_scaling[16] = 0.1;
+        cost_scaling[17] = 0.1;
+        cost_scaling[18] = 0.1;
+        cost_scaling[19] = 0.1;
+        cost_scaling[20] = 0.1;
+        cost_scaling[21] = 0.1;
+        cost_scaling[22] = 0.1;
+        cost_scaling[23] = 0.1;
+        cost_scaling[24] = 0.1;
+        cost_scaling[25] = 0.1;
+        cost_scaling[26] = 0.1;
+        cost_scaling[27] = 0.1;
+        cost_scaling[28] = 0.1;
+        cost_scaling[29] = 0.1;
+        cost_scaling[30] = 0.1;
+        cost_scaling[31] = 0.1;
+        cost_scaling[32] = 0.1;
+        cost_scaling[33] = 0.1;
+        cost_scaling[34] = 0.1;
+        cost_scaling[35] = 0.1;
+        cost_scaling[36] = 0.1;
+        cost_scaling[37] = 0.1;
+        cost_scaling[38] = 0.1;
+        cost_scaling[39] = 0.1;
+        cost_scaling[40] = 0.1;
+        cost_scaling[41] = 0.1;
+        cost_scaling[42] = 0.1;
+        cost_scaling[43] = 0.1;
+        cost_scaling[44] = 0.1;
+        cost_scaling[45] = 0.1;
+        cost_scaling[46] = 0.1;
+        cost_scaling[47] = 0.1;
+        cost_scaling[48] = 0.1;
+        cost_scaling[49] = 0.1;
         cost_scaling[50] = 1;
         for (int i = 0; i <= N; i++)
         {
@@ -619,14 +619,14 @@ void simple_dynamics_acados_setup_nlp_in(simple_dynamics_solver_capsule* capsule
     double* luh_0 = calloc(2*NH0, sizeof(double));
     double* lh_0 = luh_0;
     double* uh_0 = luh_0 + NH0;
-    lh_0[1] = -1000;
-    lh_0[3] = -1000;
-    lh_0[5] = -1000;
-    lh_0[7] = -1000;
-    uh_0[0] = 1000;
-    uh_0[2] = 1000;
-    uh_0[4] = 1000;
-    uh_0[6] = 1000;
+    lh_0[0] = -10000;
+    lh_0[1] = -10000;
+    lh_0[2] = -10000;
+    lh_0[3] = -10000;
+    lh_0[4] = -10000;
+    lh_0[5] = -10000;
+    lh_0[6] = -10000;
+    lh_0[7] = -10000;
 
     ocp_nlp_constraints_model_set_external_param_fun(nlp_config, nlp_dims, nlp_in, 0, "nl_constr_h_fun_jac", &capsule->nl_constr_h_0_fun_jac);
     ocp_nlp_constraints_model_set_external_param_fun(nlp_config, nlp_dims, nlp_in, 0, "nl_constr_h_fun", &capsule->nl_constr_h_0_fun);
@@ -734,14 +734,14 @@ void simple_dynamics_acados_setup_nlp_in(simple_dynamics_solver_capsule* capsule
     double* luh = calloc(2*NH, sizeof(double));
     double* lh = luh;
     double* uh = luh + NH;
-    lh[1] = -1000;
-    lh[3] = -1000;
-    lh[5] = -1000;
-    lh[7] = -1000;
-    uh[0] = 1000;
-    uh[2] = 1000;
-    uh[4] = 1000;
-    uh[6] = 1000;
+    lh[0] = -10000;
+    lh[1] = -10000;
+    lh[2] = -10000;
+    lh[3] = -10000;
+    lh[4] = -10000;
+    lh[5] = -10000;
+    lh[6] = -10000;
+    lh[7] = -10000;
 
     for (int i = 1; i < N; i++)
     {

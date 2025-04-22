@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     common = Common()
 
-    if( common.simulationType == 1 ):
+    if( common.simulationType != 0 ):
         rospy.signal_shutdown("[" + rospy.get_name() + "] Shut down node.")
     
     #   Publishers

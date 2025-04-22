@@ -61,7 +61,7 @@ static const casadi_int casadi_s3[5] = {1, 1, 0, 1, 0};
 /* simple_dynamics_cost_ext_cost_e_fun:(i0[9],i1[],i2[],i3[3])->(o0) */
 static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem) {
   casadi_real a0, a1, a2, a3, a4, a5;
-  a0=6.;
+  a0=10.;
   a1=arg[0]? arg[0][0] : 0;
   a2=arg[3]? arg[3][0] : 0;
   a1=(a1-a2);
@@ -73,7 +73,7 @@ static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw,
   a0=(a0*a1);
   a0=(a0*a1);
   a2=(a2+a0);
-  a0=200.;
+  a0=100.;
   a1=arg[0]? arg[0][5] : 0;
   a3=cos(a1);
   a4=arg[3]? arg[3][2] : 0;
@@ -85,22 +85,23 @@ static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw,
   a1=(a1-a4);
   a1=casadi_sq(a1);
   a3=(a3+a1);
+  a0=(a0*a3);
+  a0=(a0*a3);
+  a2=(a2+a0);
+  a0=20.;
+  a3=arg[0]? arg[0][6] : 0;
   a1=(a0*a3);
   a1=(a1*a3);
   a2=(a2+a1);
-  a1=2.;
-  a3=arg[0]? arg[0][6] : 0;
-  a4=(a1*a3);
-  a4=(a4*a3);
-  a2=(a2+a4);
-  a4=arg[0]? arg[0][7] : 0;
-  a0=(a0*a4);
-  a0=(a0*a4);
-  a2=(a2+a0);
-  a0=arg[0]? arg[0][8] : 0;
-  a1=(a1*a0);
-  a1=(a1*a0);
+  a1=1000.;
+  a3=arg[0]? arg[0][7] : 0;
+  a1=(a1*a3);
+  a1=(a1*a3);
   a2=(a2+a1);
+  a1=arg[0]? arg[0][8] : 0;
+  a0=(a0*a1);
+  a0=(a0*a1);
+  a2=(a2+a0);
   if (res[0]!=0) res[0][0]=a2;
   return 0;
 }

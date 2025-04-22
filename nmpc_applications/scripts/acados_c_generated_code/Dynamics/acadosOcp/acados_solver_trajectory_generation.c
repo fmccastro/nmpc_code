@@ -633,8 +633,6 @@ void trajectory_generation_acados_setup_nlp_in(trajectory_generation_solver_caps
     lh_0[5] = -1000;
     lh_0[6] = -1000;
     lh_0[7] = -1000;
-    lh_0[8] = -0.01;
-    uh_0[8] = 0.01;
 
     ocp_nlp_constraints_model_set_external_param_fun(nlp_config, nlp_dims, nlp_in, 0, "nl_constr_h_fun_jac", &capsule->nl_constr_h_0_fun_jac);
     ocp_nlp_constraints_model_set_external_param_fun(nlp_config, nlp_dims, nlp_in, 0, "nl_constr_h_fun", &capsule->nl_constr_h_0_fun);
@@ -661,12 +659,6 @@ void trajectory_generation_acados_setup_nlp_in(trajectory_generation_solver_caps
     idxbu[3] = 3;
     idxbu[4] = 4;
     idxbu[5] = 5;
-    idxbu[6] = 6;
-    idxbu[7] = 7;
-    idxbu[8] = 8;
-    idxbu[9] = 9;
-    idxbu[10] = 10;
-    idxbu[11] = 11;
     double* lubu = calloc(2*NBU, sizeof(double));
     double* lbu = lubu;
     double* ubu = lubu + NBU;
@@ -682,14 +674,6 @@ void trajectory_generation_acados_setup_nlp_in(trajectory_generation_solver_caps
     ubu[4] = 1000;
     lbu[5] = -1000;
     ubu[5] = 1000;
-    lbu[6] = -1000;
-    ubu[6] = 1000;
-    lbu[7] = -1000;
-    ubu[7] = 1000;
-    ubu[8] = 1000;
-    ubu[9] = 1000;
-    ubu[10] = 1000;
-    ubu[11] = 1000;
 
     for (int i = 0; i < N; i++)
     {
@@ -759,31 +743,6 @@ void trajectory_generation_acados_setup_nlp_in(trajectory_generation_solver_caps
     free(lubx);
 
 
-    // set up general constraints for stage 0 to N-1
-    double* D = calloc(NG*NU, sizeof(double));
-    double* C = calloc(NG*NX, sizeof(double));
-    double* lug = calloc(2*NG, sizeof(double));
-    double* lg = lug;
-    double* ug = lug + NG;
-    D[0+NG * 0] = 1;
-    D[0+NG * 1] = -1;
-    D[1+NG * 2] = 1;
-    D[1+NG * 3] = -1;
-    lg[0] = -0.01;
-    lg[1] = -0.01;
-    ug[0] = 0.01;
-    ug[1] = 0.01;
-
-    for (int i = 0; i < N; i++)
-    {
-        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, i, "D", D);
-        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, i, "C", C);
-        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, i, "lg", lg);
-        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, i, "ug", ug);
-    }
-    free(D);
-    free(C);
-    free(lug);
 
 
     // set up nonlinear constraints for stage 1 to N-1
@@ -798,8 +757,6 @@ void trajectory_generation_acados_setup_nlp_in(trajectory_generation_solver_caps
     lh[5] = -1000;
     lh[6] = -1000;
     lh[7] = -1000;
-    lh[8] = -0.01;
-    uh[8] = 0.01;
 
     for (int i = 1; i < N; i++)
     {
@@ -879,21 +836,6 @@ void trajectory_generation_acados_setup_nlp_in(trajectory_generation_solver_caps
 
 
 
-    // set up general constraints for last stage
-    double* C_e = calloc(NGN*NX, sizeof(double));
-    double* lug_e = calloc(2*NGN, sizeof(double));
-    double* lg_e = lug_e;
-    double* ug_e = lug_e + NGN;
-    lg_e[0] = -0.01;
-    ug_e[0] = 0.01;
-    lg_e[1] = -0.01;
-    ug_e[1] = 0.01;
-
-    ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, N, "C", C_e);
-    ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, N, "lg", lg_e);
-    ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, N, "ug", ug_e);
-    free(C_e);
-    free(lug_e);
 
 
 }

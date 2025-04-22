@@ -8,7 +8,7 @@ from std_msgs.msg import Int32, Float64, Float32, Float32MultiArray, Bool, Color
 from sensor_msgs.msg import JointState
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, Inertia, Polygon, Point, Pose, Point, Quaternion, Vector3, Wrench, WrenchStamped
-from gazebo_msgs.msg import LinkStates, PerformanceMetrics
+from gazebo_msgs.msg import LinkStates, PerformanceMetrics, ContactState, ContactsState
 from visualization_msgs.msg import Marker, MarkerArray
 from nmpc_bringup.msg import pose3D, velocity3D, pose3DStamped, wheelTrueVelocitiesBodyFrame, referencePath
 

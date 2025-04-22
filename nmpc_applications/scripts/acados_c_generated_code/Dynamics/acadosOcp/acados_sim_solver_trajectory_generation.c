@@ -203,16 +203,16 @@ int trajectory_generation_acados_sim_create(trajectory_generation_sim_solver_cap
 
 
     // u
-    double u0[12];
-    for (int ii = 0; ii < 12; ii++)
+    double u0[6];
+    for (int ii = 0; ii < 6; ii++)
         u0[ii] = 0.0;
 
     sim_in_set(trajectory_generation_sim_config, trajectory_generation_sim_dims,
                trajectory_generation_sim_in, "u", u0);
 
     // S_forw
-    double S_forw[288];
-    for (int ii = 0; ii < 288; ii++)
+    double S_forw[216];
+    for (int ii = 0; ii < 216; ii++)
         S_forw[ii] = 0.0;
     for (int ii = 0; ii < 12; ii++)
         S_forw[ii + ii * 12 ] = 1.0;

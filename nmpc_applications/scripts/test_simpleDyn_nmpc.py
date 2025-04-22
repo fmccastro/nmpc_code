@@ -29,14 +29,29 @@ if __name__ == '__main__':
     #   Path tracking
     model = SimplifiedDynamics(com2wheels)
 
-    range = 5000
-    range_aux = 4500
+    range = 1000
+    range_aux = 800
 
     #   Generate reference
-    x_ref = np.linspace(0, 100, range)
-    y_ref = np.sin(x_ref)
+    #   Generate reference
+    x_ref = np.ones( (range) ) * 0   #np.linspace(0, 100, range)
+    y_ref = np.ones( (range) ) * 1   #np.linspace(0, 100, range)
     yaw_ref = np.ones( (range) ) * math.pi / 2
+
+    """x_ref = np.linspace(0, 100, range)
+    y_ref = np.sin(x_ref)
+
+    yaw_ref = []
+
+    for _ in np.arange(range - 1):
+        yaw_ref += [ math.atan2( y_ref[_ + 1] - y_ref[_], x_ref[_ + 1] - x_ref[_] ) ]
     
+    yaw_ref += [yaw_ref[-1]]
+
+    yaw_ref = np.array(yaw_ref)"""
+
+    print(x_ref.shape, y_ref.shape, yaw_ref.shape)
+
     pose = np.stack( [0, 0, 0, 0, 0, 0] )
     velocity = np.stack( [0, 0, 0] )
     
@@ -78,6 +93,8 @@ if __name__ == '__main__':
             break
 
         solutionX, solutionU, cost_fed, optTime_fed = model._data()
+
+        print("Optimization time: ", optTime_prep + optTime_fed)
 
         next_state = model._simulate( np.append(pose, velocity), controls )
 
@@ -141,6 +158,11 @@ if __name__ == '__main__':
             plt.show()"""
 
     #range_aux = i
+
+    plt.figure()
+    plt.plot( x_ref[:range_aux], y_ref[:range_aux], 'r--')
+    plt.plot( path[0::6], path[1::6] )
+    plt.title('position')
 
     plt.figure()
     plt.plot( x_ref[:range_aux], 'r--')

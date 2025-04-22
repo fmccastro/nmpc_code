@@ -84,11 +84,11 @@ class Common:
 
     """                 
         0 -> path-tracking (kinematics)
-        1 -> path and trajectory tracking (kinematics + dynamics + wheel forces allocation)
-        2 -> add obstacle avoidance
+        1 -> path-tracking (dynamics)
+        2 -> add terrain correction
         3 -> add parameter estimation
     """
-    simulationType = 1
+    simulationType = 2
 
     """
         Convex inner approximation iteration parameters
@@ -101,7 +101,7 @@ class Common:
     """
         Algorithm parameters
     """
-    Ts = 0.02                                                           #   Sampling Time
+    Ts = 0.10                                                           #   Sampling Time
     fixedTs = True                                                      #   Variable sampling time
     N = 50                                                              #   Control horizon
     maxCycles = 10                                                      #   Maximum number of cycles for look ahead point finder
@@ -234,21 +234,21 @@ class Common:
     ##########################################
 
     #   Simplified dynamics costs   ##########
-    Q_p_simple_dyn = 2 * np.diag( [ 3e0, 3e0, 1e-2] )
-    Q_o_simple_dyn = 2 * np.diag( [ 1e-2, 1e-2, 1e2 ] )  
+    Q_p_simple_dyn = 2 * np.diag( [ 5e0, 5e0, 1e-2] )
+    Q_o_simple_dyn = 2 * np.diag( [ 1e-2, 1e-2, 5e1 ] )  
 
-    Q_vx_simple_dyn = 2 * 1e0 
-    Q_vy_simple_dyn = 2 * 1e2
-    Q_wz_simple_dyn = 2 * 1e0
+    Q_vx_simple_dyn = 2 * 1e1
+    Q_vy_simple_dyn = 2 * 5e2
+    Q_wz_simple_dyn = 2 * 1e1
 
-    Q_p_simple_dyn_t = 2 * np.diag( [ 3e0, 3e0, 1e-2 ] )                                  
-    Q_o_simple_dyn_t = 2 * np.diag( [ 1e-2, 1e-2, 1e2 ] )  
+    Q_p_simple_dyn_t = 2 * np.diag( [ 5e0, 5e0, 1e-2 ] )                                  
+    Q_o_simple_dyn_t = 2 * np.diag( [ 1e-2, 1e-2, 5e1 ] )  
 
-    Q_vx_simple_dyn_t = 2 * 1e0 
-    Q_vy_simple_dyn_t = 2 * 1e2
-    Q_wz_simple_dyn_t = 2 * 1e0 
+    Q_vx_simple_dyn_t = 2 * 1e1
+    Q_vy_simple_dyn_t = 2 * 5e2
+    Q_wz_simple_dyn_t = 2 * 1e1
 
-    Q_f_simple_dyn = 2 * np.diag( [1e-2, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2] )
+    Q_f_simple_dyn = 2 * np.diag( [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3] )
 
     Q_icr = 2 * np.diag( [1e-2, 1e-2, 1e-2] )
 
@@ -259,21 +259,21 @@ class Common:
     Q_p_dyn = 2 * np.diag( [ 3e0, 3e0, 1e-2] )
     Q_o_dyn = 2 * np.diag( [ 1e-2, 1e-2, 1e2 ] )  
 
-    Q_v_dyn = 2 * np.diag( [ 1e0, 1e1, 1e1 ] )                                 
-    Q_w_dyn = 2 * np.diag( [ 1e1, 1e1, 1e0 ] )
+    Q_v_dyn = 2 * np.diag( [ 1e0, 1e2, 1e2 ] )                                 
+    Q_w_dyn = 2 * np.diag( [ 1e-2, 1e-2, 1e0 ] )
 
     Q_p_dyn_t = 2 * np.diag( [ 3e0, 3e0, 1e-2 ] )                                  
     Q_o_dyn_t = 2 * np.diag( [ 1e-2, 1e-2, 1e2 ] )  
 
-    Q_v_dyn_t = 2 * np.diag( [ 1e0, 1e1, 1e1 ] )                                   
-    Q_w_dyn_t = 2 * np.diag( [ 1e1, 1e1, 1e0 ] )    
+    Q_v_dyn_t = 2 * np.diag( [ 1e0, 1e2, 1e2 ] )                                   
+    Q_w_dyn_t = 2 * np.diag( [ 1e-2, 1e-2, 1e0 ] )    
 
-    Q_f_dyn = 2 * np.diag( [1e1, 1e1, 1e1, 1e1, 1e1, 1e1, 1e1, 1e1, 1e-1, 1e-1, 1e-1, 1e-1 ] )
+    Q_f_dyn = 2 * np.diag( [1e0, 1e0, 1e-2, 1e-2, 1e-2, 1e-2] )
 
     Q_icr = 2 * np.diag( [1e-2, 1e-2, 1e-2] )
 
-    Q_m_dyn = 2 * np.diag( [1e2, 1e2] )
-    ##########################################     
+    Q_m_dyn = 2 * np.diag( [1e-2, 1e-2] )
+    ##########################################  
 
     #   SQP or SQP_RTI
     nlp_solver_type = 'SQP_RTI'                                                                  
@@ -527,6 +527,20 @@ class Common:
         
         elif( option == 3 ):
             self.frontRightWheelTorque = msg
+    
+    def _contactCallback(self, msg, option ):
+
+        if( option == 0 ):
+            self.backLeftWheelContact = msg
+        
+        elif( option == 1 ):
+            self.frontLeftWheelContact = msg
+
+        elif( option == 2 ):
+            self.backRightWheelContact = msg
+
+        elif( option == 3 ):
+            self.frontRightWheelContact = msg
 
     def _syncSSECallback( self, topic1, topic2 ):
 

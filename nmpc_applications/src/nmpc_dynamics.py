@@ -23,14 +23,15 @@ if __name__ == '__main__':
 
     common = Common()
 
-    if( common.simulationType != 1 ):
+    if( common.simulationType < 1 ):
         rospy.signal_shutdown("[" + rospy.get_name() + "] Shut down node.")
 
-    #   Publishers
-    pub_backLeftWheelRate = rospy.Publisher('/back_left_wheel_plant/command', Float64, queue_size = 1)
-    pub_frontLeftWheelRate = rospy.Publisher('/front_left_wheel_plant/command', Float64, queue_size = 1)
-    pub_backRightWheelRate = rospy.Publisher('/back_right_wheel_plant/command', Float64, queue_size = 1)
-    pub_frontRightWheelRate = rospy.Publisher('/front_right_wheel_plant/command', Float64, queue_size = 1)
+    if( common.simulationType == 1 ):
+        #   Publishers
+        pub_backLeftWheelRate = rospy.Publisher('/back_left_wheel_plant/command', Float64, queue_size = 1)
+        pub_frontLeftWheelRate = rospy.Publisher('/front_left_wheel_plant/command', Float64, queue_size = 1)
+        pub_backRightWheelRate = rospy.Publisher('/back_right_wheel_plant/command', Float64, queue_size = 1)
+        pub_frontRightWheelRate = rospy.Publisher('/front_right_wheel_plant/command', Float64, queue_size = 1)
 
     pub_nodePeriod = rospy.Publisher( '/vehicle/node/nmpc_dynamics/period', Float64, queue_size = 1 )
 
@@ -42,23 +43,17 @@ if __name__ == '__main__':
 
     #   Subscribe to ground truth
     rospy.Subscriber( '/gazebo/link_states', LinkStates, common._callback, 0 )                                           #   '/gazebo/link_states' -> topic which collects ground truth
-    rospy.Subscriber( '/vehicle/nmpc_kinematics/horizonPath', Float32MultiArray, common._multiArrayCallback, 1)          #   '/vehicle/nmpc_kinematics/horizonPath'
-    rospy.Subscriber( '/vehicle/nmpc_kinematics/horizonVelocity', Float32MultiArray, common._multiArrayCallback, 2)      #   '/vehicle/nmpc_kinematics/horizonVelocity' -> topic which collects control horizon from kinematics problem
     rospy.Subscriber( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame, common._callback, 6 )            #   '/vehicle/trueVelocity_bodyFrame' -> topic which collect robot links perfect velocity
     rospy.Subscriber( '/vehicle/true_pose3D', pose3DStamped, common._callback, 3 )                                       #   '/vehicle/truePose' -> topic which collects robot perfect pose
-    rospy.Subscriber( '/vehicle/reference', referencePath, common._multiArrayCallback, 0 )                           #   '/vehicle/reference' -> topic which collects the reference path 
-
+    rospy.Subscriber( '/vehicle/reference', referencePath, common._multiArrayCallback, 0 )                               #   '/vehicle/reference' -> topic which collects the reference path 
+    rospy.Subscriber( '/joint_states', JointState, common._callback, 8 )                                                 #   '/vehicle/joint_states' -> topic which collects the joint position and velocity ( linear or angular )
+    
     rospy.wait_for_message( '/gazebo/link_states', LinkStates )
-    rospy.wait_for_message( '/vehicle/nmpc_kinematics/horizonPath', Float32MultiArray )
-    rospy.wait_for_message( '/vehicle/nmpc_kinematics/horizonVelocity', Float32MultiArray )
     rospy.wait_for_message( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame )
     rospy.wait_for_message( '/vehicle/true_pose3D', pose3DStamped )
     rospy.wait_for_message( '/vehicle/reference', referencePath )
-
-    #   Subscriptions
-    rospy.Subscriber( '/joint_states', JointState, common._callback, 8 )                                                    #   '/vehicle/joint_states' -> topic which collects the joint position and velocity ( linear or angular )
     rospy.wait_for_message( '/joint_states', JointState )
-
+    
     #   Services
     rospy.wait_for_service( '/gazebo/get_world_properties' )
     rospy.wait_for_service( '/gazebo/get_model_properties' )
@@ -123,8 +118,8 @@ if __name__ == '__main__':
             print( "[nmpc.py] COM and MoI were not computed." )
 
     #   Trajectory tracking
-    model = Dynamics(com2wheels)
-    integrator = wheelRateIntegrator()
+    model = SimplifiedDynamics(com2wheels)
+    integrator = wheelRateIntegrator(com2wheels)
     
     index = 0
 
@@ -144,6 +139,7 @@ if __name__ == '__main__':
             start = time.time()
             
             currentPose = common.true_pose3D.pose
+            jointStates = common.jointStates.velocity
             
             #   Check if goal point is achieved in order to break simulation loop
             if( math.dist( [currentPose.x, currentPose.y], common.goalPoint ) <= common.goalCheck ):
@@ -158,10 +154,16 @@ if __name__ == '__main__':
                     currentPose = common.true_pose3D.pose
                     currentVelocity = common.true_velocity_bodyFrame.velocity[0]
 
-                    horizonPath = list(common.horizonPath.data)
-                    horizonVelocity = list(common.horizonVelocity.data)
+                    path2Follow = common.referencePath
+
+                    initialPose = path2Follow.startingPose
+                    reference = list(path2Follow.reference)
+                    initialVelocity = path2Follow.startingVelocity
+
+                    initialPose = np.array( [initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw] )
+                    currentVelocity = np.array( [initialVelocity.linear.x, initialVelocity.linear.y, initialVelocity.angular.z] )
                     
-                    model._setInitialGuess(10, currentPose, currentVelocity, horizonPath, horizonVelocity)
+                    model._setInitialGuess(10, initialPose, currentVelocity, reference)
 
                     input("[" + rospy.get_name() + "] Wait for input to start simulation cycle.")
                 
@@ -169,10 +171,16 @@ if __name__ == '__main__':
                     currentPose = common.true_pose3D.pose
                     currentVelocity = common.true_velocity_bodyFrame.velocity[0]
 
-                    horizonPath = list(common.horizonPath.data)
-                    horizonVelocity = list(common.horizonVelocity.data)
+                    path2Follow = common.referencePath
 
-                    solutionX, solutionU, next_fx_l, next_fx_r = model._solve_sqp(currentPose, currentVelocity, horizonPath, horizonVelocity)
+                    initialPose = path2Follow.startingPose
+                    reference = list(path2Follow.reference)
+                    initialVelocity = path2Follow.startingVelocity
+
+                    initialPose = np.array( [initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw] )
+                    currentVelocity = np.array( [initialVelocity.linear.x, initialVelocity.linear.y, initialVelocity.angular.z] )
+
+                    controls_next, status = model._solve_sqp(initialPose, currentVelocity, reference)
 
                 elif( common.nlp_solver_type == 'SQP_RTI' ):
                     model._preparation_sqp_rti()
@@ -180,12 +188,16 @@ if __name__ == '__main__':
                     currentPose = common.true_pose3D.pose
                     currentVelocity = common.true_velocity_bodyFrame.velocity[0]
 
-                    horizonPath = list(common.horizonPath.data)
-                    horizonVelocity = list(common.horizonVelocity.data)
+                    path2Follow = common.referencePath
 
-                    solutionX, solutionU, next_fx_l, next_fx_r = model._feedback_sqp_rti(currentPose, currentVelocity, horizonPath, horizonVelocity)
+                    initialPose = path2Follow.startingPose
+                    reference = list(path2Follow.reference)
+                    initialVelocity = path2Follow.startingVelocity
 
-                    print(next_fx_l, next_fx_r)
+                    initialPose = np.array( [initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw] )
+                    currentVelocity = np.array( [initialVelocity.linear.x, initialVelocity.linear.y, initialVelocity.angular.z] )
+
+                    controls_next, status = model._feedback_sqp_rti(initialPose, currentVelocity, reference)
 
                 if( index == 0 ):
                     timeDiff = 0.1
@@ -193,9 +205,7 @@ if __name__ == '__main__':
                 else:
                     pass
 
-                jointStates = common.jointStates.velocity
-
-                res = integrator._callIntegrator(jointStates[0], jointStates[1], next_fx_l, next_fx_r, timeDiff)
+                solutionX, solutionU, _, _ = model._data()
 
                 horizonState.data = solutionX
                 horizonForcesMoments.data = solutionU + solutionU[-6:]
@@ -203,13 +213,14 @@ if __name__ == '__main__':
                 pub_horizonState.publish(horizonState)
                 pub_horizonForcesMoments.publish(horizonForcesMoments)
 
-                pub_command_fx_l.publish(next_fx_l)
-                pub_command_fx_r.publish(next_fx_r)
-
-                pub_backLeftWheelRate.publish(res[0])
-                pub_frontLeftWheelRate.publish(res[0])
-                pub_backRightWheelRate.publish(res[1])
-                pub_frontRightWheelRate.publish(res[1])
+                pub_command_fx_l.publish(controls_next[0])
+                pub_command_fx_r.publish(controls_next[1])
+                
+                if( common.simulationType == 1 ):
+                    pub_backLeftWheelRate.publish(common.wheelRadius * controls_next[0])
+                    pub_frontLeftWheelRate.publish(common.wheelRadius * controls_next[0])
+                    pub_backRightWheelRate.publish(common.wheelRadius * controls_next[1])
+                    pub_frontRightWheelRate.publish(common.wheelRadius * controls_next[1])
 
             end = time.time()
 

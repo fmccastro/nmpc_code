@@ -53,17 +53,27 @@ static const casadi_int casadi_s1[4] = {0, 1, 0, 0};
 
 /* integrator_wheelrate_expl_ode_fun:(i0[2],i1[2],i2[0])->(o0[2]) */
 static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem) {
-  casadi_real a0, a1, a2;
-  a0=1.1100000000000000e-01;
-  a1=arg[1]? arg[1][0] : 0;
-  a1=(a0*a1);
-  a2=1.4999999999999999e-02;
-  a1=(a1/a2);
-  if (res[0]!=0) res[0][0]=a1;
-  a1=arg[1]? arg[1][1] : 0;
+  casadi_real a0, a1, a2, a3, a4, a5, a6;
+  a0=3.2313191227517084e+00;
+  a1=1.1100000000000000e-01;
+  a2=arg[1]? arg[1][0] : 0;
+  a3=(a1*a2);
+  a4=7.7699999999999991e-02;
+  a2=(a4*a2);
+  a3=(a3-a2);
+  a2=(a0*a3);
+  a5=2.6929322147961425e+00;
+  a6=arg[1]? arg[1][1] : 0;
+  a1=(a1*a6);
+  a4=(a4*a6);
+  a1=(a1-a4);
+  a4=(a5*a1);
+  a2=(a2+a4);
+  if (res[0]!=0) res[0][0]=a2;
+  a5=(a5*a3);
   a0=(a0*a1);
-  a0=(a0/a2);
-  if (res[0]!=0) res[0][1]=a0;
+  a5=(a5+a0);
+  if (res[0]!=0) res[0][1]=a5;
   return 0;
 }
 

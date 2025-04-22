@@ -489,11 +489,6 @@ class SimplifiedDynamics(ModelParameters, Common):
         gravity = self.TransRotationMatrix.T @ ca.vertcat(0, 0, self.gz)
         robotWeight = gravity * self.robotMass
 
-        """fy_bl = -robotWeight[1] / 4
-        fy_fl = -robotWeight[1] / 4
-        fy_br = -robotWeight[1] / 4
-        fy_fr = -robotWeight[1] / 4"""
-
         fz_bl = -robotWeight[2] / 4
         fz_fl = -robotWeight[2] / 4
         fz_br = -robotWeight[2] / 4
@@ -538,23 +533,23 @@ class SimplifiedDynamics(ModelParameters, Common):
         model.u = controls
         model.p = parameters
 
-        model.con_h_expr_0 = ca.vertcat( self.fx_l + self.niu * fz_bl,\
-                                         self.fx_l - self.niu * fz_fl,\
-                                         self.fx_r + self.niu * fz_br,\
-                                         self.fx_r - self.niu * fz_fr,\
-                                         self.fy_bl + self.niu * fz_bl,\
-                                         self.fy_fl - self.niu * fz_fl,\
-                                         self.fy_br + self.niu * fz_br,\
-                                         self.fy_fr - self.niu * fz_fr )
-    
-        model.con_h_expr = ca.vertcat( self.fx_l + self.niu * fz_bl,\
-                                       self.fx_l - self.niu * fz_fl,\
-                                       self.fx_r + self.niu * fz_br,\
-                                       self.fx_r - self.niu * fz_fr,\
-                                       self.fy_bl + self.niu * fz_bl,\
-                                       self.fy_fl - self.niu * fz_fl,\
-                                       self.fy_br + self.niu * fz_br,\
-                                       self.fy_fr - self.niu * fz_fr )
+        model.con_h_expr_0 = ca.vertcat( ca.power(self.fx_l, 2) - ca.power(self.niu * fz_bl, 2),\
+                                         ca.power(self.fx_l, 2) - ca.power(self.niu * fz_fl, 2),\
+                                         ca.power(self.fx_r, 2) - ca.power(self.niu * fz_br, 2),\
+                                         ca.power(self.fx_r, 2) - ca.power(self.niu * fz_fr, 2),\
+                                         ca.power(self.fy_bl, 2) - ca.power(self.niu * fz_bl, 2),\
+                                         ca.power(self.fy_fl, 2) - ca.power(self.niu * fz_fl, 2),\
+                                         ca.power(self.fy_br, 2) - ca.power(self.niu * fz_br, 2),\
+                                         ca.power(self.fy_fr, 2) - ca.power(self.niu * fz_fr, 2) )
+
+        model.con_h_expr = ca.vertcat( ca.power(self.fx_l, 2) - ca.power(self.niu * fz_bl, 2),\
+                                       ca.power(self.fx_l, 2) - ca.power(self.niu * fz_fl, 2),\
+                                       ca.power(self.fx_r, 2) - ca.power(self.niu * fz_br, 2),\
+                                       ca.power(self.fx_r, 2) - ca.power(self.niu * fz_fr, 2),\
+                                       ca.power(self.fy_bl, 2) - ca.power(self.niu * fz_bl, 2),\
+                                       ca.power(self.fy_fl, 2) - ca.power(self.niu * fz_fl, 2),\
+                                       ca.power(self.fy_br, 2) - ca.power(self.niu * fz_br, 2),\
+                                       ca.power(self.fy_fr, 2) - ca.power(self.niu * fz_fr, 2) )
         
         model.name = "simple_dynamics"
 
@@ -569,7 +564,7 @@ class SimplifiedDynamics(ModelParameters, Common):
                          self.vy,\
                          self.wz,\
                          controls )
-    
+        
         y = ca.vertcat(self.x - self.x_ref,\
                        self.y - self.y_ref,\
                        error_yaw,\
@@ -632,11 +627,11 @@ class SimplifiedDynamics(ModelParameters, Common):
         constraints.lbu = np.array( [-100.0, -100.0, -100.0, -100.0, -100.0, -100.0] )
         constraints.ubu = np.array( [1e2, 1e2, 1e2, 1e2, 1e2, 1e2] )
         
-        constraints.lh_0 = np.array( [0.0, -1e3, 0.0, -1e3, 0.0, -1e3, 0.0, -1e3] )
-        constraints.lh = np.array( [0.0, -1e3, 0.0, -1e3, 0.0, -1e3, 0.0, -1e3] )
+        constraints.lh_0 = np.array( [-1e4] * 8 )
+        constraints.lh = np.array( [-1e4] * 8 )
 
-        constraints.uh_0 = np.array( [1e3, 0.0, 1e3, 0.0, 1e3, 0.0, 1e3, 0.0] )
-        constraints.uh = np.array( [1e3, 0.0, 1e3, 0.0, 1e3, 0.0, 1e3, 0.0] )
+        constraints.uh_0 = np.array( [0.0] * 8 )
+        constraints.uh = np.array( [0.0] * 8 )
 
         #constraints.idxbx_0 = np.array( [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] )
         constraints.idxbx = np.array( [0, 1, 2, 3, 4, 5, 6, 7, 8] )
@@ -773,7 +768,7 @@ class SimplifiedDynamics(ModelParameters, Common):
 
         opt_u = self.solver.get(0, 'u')
 
-        return opt_u[0:6]
+        return opt_u[0:6], status
 
     def _preparation_sqp_rti(self):
         self.solver.options_set('rti_phase', 1)
@@ -863,7 +858,7 @@ class Dynamics(ModelParameters, Common):
                               ca.vertcat(self.ixz, self.iyz, self.izz) )
 
         #   Controls
-        controls = ca.vertcat(self.fx_wheels, self.fy_wheels, self.fz_wheels)
+        controls = ca.vertcat(self.fx_l, self.fx_r)
 
         #   Gravity
         gravity = self.TransRotationMatrix.T @ ca.vertcat(0, 0, self.gz)
@@ -898,9 +893,19 @@ class Dynamics(ModelParameters, Common):
         fy_br = 0.0 #-robotWeight[1] / 4 - cbf * slip_angle_br
         fy_fr = 0.0 #-robotWeight[1] / 4 - cbf * slip_angle_fr"""
 
-        sum_fx = self.fx_bl + self.fx_fl + self.fx_br + self.fx_fr
-        sum_fy = self.fy_bl + self.fy_fl + self.fy_br + self.fy_fr
-        sum_fz = self.fz_bl + self.fz_fl + self.fz_br + self.fz_fr
+        fy_bl = -robotWeight[1] / 4
+        fy_fl = -robotWeight[1] / 4
+        fy_br = -robotWeight[1] / 4
+        fy_fr = -robotWeight[1] / 4
+
+        fz_bl = -robotWeight[2] / 4
+        fz_fl = -robotWeight[2] / 4
+        fz_br = -robotWeight[2] / 4
+        fz_fr = -robotWeight[2] / 4
+
+        sum_fx = 2 * self.fx_l + 2 * self.fx_r
+        sum_fy = fy_bl + fy_fl + fy_br + fy_fr
+        sum_fz = fz_bl + fz_fl + fz_br + fz_fr
 
         #   Vertical forces
         """l = 2 * abs(com2wheel["com2bl"][0])
@@ -920,10 +925,10 @@ class Dynamics(ModelParameters, Common):
 
         sumForces = ca.vertcat(sum_fx, sum_fy, sum_fz) + robotWeight
 
-        m_bl = S_bl @ ca.vertcat(self.fx_bl, self.fy_bl, self.fz_bl)
-        m_fl = S_fl @ ca.vertcat(self.fx_fl, self.fy_fl, self.fz_fl)
-        m_br = S_br @ ca.vertcat(self.fx_br, self.fy_br, self.fz_br)
-        m_fr = S_fr @ ca.vertcat(self.fx_fr, self.fy_fr, self.fz_fr)
+        m_bl = S_bl @ ca.vertcat(self.fx_l, self.fy_bl, fz_bl)
+        m_fl = S_fl @ ca.vertcat(self.fx_l, self.fy_fl, fz_fl)
+        m_br = S_br @ ca.vertcat(self.fx_r, self.fy_br, fz_br)
+        m_fr = S_fr @ ca.vertcat(self.fx_r, self.fy_fr, fz_fr)
 
         sumMoments = m_bl + m_fl + m_br + m_fr
 
@@ -957,25 +962,15 @@ class Dynamics(ModelParameters, Common):
         model.u = controls
         model.p = parameters
 
-        model.con_h_expr_0 = ca.vertcat( ca.power(self.fx_bl, 2) - ca.power(self.niu * self.fz_bl, 2),\
-                                         ca.power(self.fx_fl, 2) - ca.power(self.niu * self.fz_fl, 2),\
-                                         ca.power(self.fx_br, 2) - ca.power(self.niu * self.fz_br, 2),\
-                                         ca.power(self.fx_fr, 2) - ca.power(self.niu * self.fz_fr, 2),\
-                                         ca.power(self.fy_bl, 2) - ca.power(self.niu * self.fz_bl, 2),\
-                                         ca.power(self.fy_fl, 2) - ca.power(self.niu * self.fz_fl, 2),\
-                                         ca.power(self.fy_br, 2) - ca.power(self.niu * self.fz_br, 2),\
-                                         ca.power(self.fy_fr, 2) - ca.power(self.niu * self.fz_fr, 2),\
-                                         self.fz_bl + self.fz_fl + self.fz_br + self.fz_fr + robotWeight[2] )
+        model.con_h_expr_0 = ca.vertcat( ca.power(self.fx_l, 2) - ca.power(self.niu * fz_bl, 2),\
+                                         ca.power(self.fx_l, 2) - ca.power(self.niu * fz_fl, 2),\
+                                         ca.power(self.fx_r, 2) - ca.power(self.niu * fz_br, 2),\
+                                         ca.power(self.fx_r, 2) - ca.power(self.niu * fz_fr, 2) )
     
-        model.con_h_expr = ca.vertcat( ca.power(self.fx_bl, 2) - ca.power(self.niu * self.fz_bl, 2),\
-                                       ca.power(self.fx_fl, 2) - ca.power(self.niu * self.fz_fl, 2),\
-                                       ca.power(self.fx_br, 2) - ca.power(self.niu * self.fz_br, 2),\
-                                       ca.power(self.fx_fr, 2) - ca.power(self.niu * self.fz_fr, 2),\
-                                       ca.power(self.fy_bl, 2) - ca.power(self.niu * self.fz_bl, 2),\
-                                       ca.power(self.fy_fl, 2) - ca.power(self.niu * self.fz_fl, 2),\
-                                       ca.power(self.fy_br, 2) - ca.power(self.niu * self.fz_br, 2),\
-                                       ca.power(self.fy_fr, 2) - ca.power(self.niu * self.fz_fr, 2),\
-                                       self.fz_bl + self.fz_fl + self.fz_br + self.fz_fr + robotWeight[2] )
+        model.con_h_expr = ca.vertcat( ca.power(self.fx_l, 2) - ca.power(self.niu * fz_bl, 2),\
+                                       ca.power(self.fx_l, 2) - ca.power(self.niu * fz_fl, 2),\
+                                       ca.power(self.fx_r, 2) - ca.power(self.niu * fz_br, 2),\
+                                       ca.power(self.fx_r, 2) - ca.power(self.niu * fz_fr, 2) )
         
         model.name = "trajectory_generation"
 
@@ -992,18 +987,8 @@ class Dynamics(ModelParameters, Common):
                          self.wx,\
                          self.wy,\
                          self.wz,\
-                         self.fx_bl,\
-                         self.fx_br,\
-                         self.fx_fl,\
-                         self.fx_fr,\
-                         self.fy_bl,\
-                         self.fy_fl,\
-                         self.fy_br,\
-                         self.fy_fr,\
-                         self.fz_bl,\
-                         self.fz_fl,\
-                         self.fz_br,\
-                         self.fz_fr,\
+                         self.fx_l,\
+                         self.fx_r,\
                          sumMoments[0],\
                          sumMoments[1] )
     
@@ -1016,18 +1001,8 @@ class Dynamics(ModelParameters, Common):
                        self.wx,\
                        self.wy,\
                        self.wz,\
-                       self.fx_bl,\
-                       self.fx_br,\
-                       self.fx_fl,\
-                       self.fx_fr,\
-                       self.fy_bl,\
-                       self.fy_fl,\
-                       self.fy_br,\
-                       self.fy_fr,\
-                       self.fz_bl,\
-                       self.fz_fl,\
-                       self.fz_br,\
-                       self.fz_fr,\
+                       self.fx_l,\
+                       self.fx_r,\
                        sumMoments[0],\
                        sumMoments[1] )
 
@@ -1053,10 +1028,8 @@ class Dynamics(ModelParameters, Common):
         dims.nu = model.u.rows()
         dims.nx = model.x.rows()
         dims.np = model.p.rows()
-        dims.ng = 2
-        dims.ng_e = 2
-        dims.nh_0 = 9
-        dims.nh = 9
+        dims.nh_0 = 8
+        dims.nh = 8
         #dims.nh_e = 3
         ###
         
@@ -1086,37 +1059,22 @@ class Dynamics(ModelParameters, Common):
         #constraints.ubx_0 = np.stack( [ self.p_ub[0], self.p_ub[1], self.qsi_ub[2], self.v_ub[0], self.v_ub[1], self.w_ub[2] ] )
         constraints.ubx = np.stack( [100.0, 100.0, 100.0, math.pi/4, math.pi/4, math.pi, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0] )
         constraints.ubx_e = np.stack( [100.0, 100.0, 100.0, math.pi/4, math.pi/4, math.pi, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0] )
+        
+        constraints.lbu = np.array( [-1000.0, -1000.0] )
+        constraints.ubu = np.array( [1000.0, 1000.0] )
+        
+        constraints.lh_0 = np.array( [-1e3, -1e3, -1e3, -1e3] )
+        constraints.lh = np.array( [-1e3, -1e3, -1e3, -1e3] )
 
-        constraints.C = np.zeros( (2, 12) )
-        constraints.C_e = np.zeros( (2, 12) )
-
-        constraints.D = np.array( [ [1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],\
-                                    [0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0] ] )
-                                  
-        constraints.lg = np.array( [-0.01, -0.01] ).reshape(-1, 1)
-        constraints.lg_e = np.array( [-0.01, -0.01] ).reshape(-1, 1)
-        
-        constraints.ug = np.array( [0.01, 0.01] ).reshape(-1, 1)
-        constraints.ug_e = np.array( [0.01, 0.01] ).reshape(-1, 1)
-        
-        constraints.lbu = np.array( [-1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0, -1000.0,\
-                                     0.0, 0.0, 0.0, 0.0 ] )
-        
-        constraints.ubu = np.array( [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0,\
-                                     1000.0, 1000.0, 1000.0, 1000.0 ] )
-        
-        constraints.lh_0 = np.array( [-1e3, -1e3, -1e3, -1e3, -1e3, -1e3, -1e3, -1e3, -1e-2] )
-        constraints.lh = np.array( [-1e3, -1e3, -1e3, -1e3, -1e3, -1e3, -1e3, -1e3, -1e-2] )
-
-        constraints.uh_0 = np.array( [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1e-2] )
-        constraints.uh = np.array( [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1e-2] )
+        constraints.uh_0 = np.array( [0.0, 0.0, 0.0, 0.0] )
+        constraints.uh = np.array( [0.0, 0.0, 0.0, 0.0] )
 
         #constraints.idxbx_0 = np.array( [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] )
         constraints.idxbx = np.array( [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] )
         constraints.idxbx_e = np.array( [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] )
         #constraints.idxbxe_0 = np.array( [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] )
         
-        constraints.idxbu = np.array( [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] )
+        constraints.idxbu = np.array( [0, 1] )
 
         constraints.x0 = np.stack( [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] ) 
         ###
@@ -1250,7 +1208,7 @@ class Dynamics(ModelParameters, Common):
 
         opt_u = self.solver.get(0, 'u')
 
-        return opt_u[0:12]
+        return opt_u[0:2]
 
     def _preparation_sqp_rti(self):
         self.solver.options_set('rti_phase', 1)
@@ -1274,7 +1232,7 @@ class Dynamics(ModelParameters, Common):
         
         opt_u = self.solver.get(0, 'u')
 
-        return opt_u[0:12], status2
+        return opt_u[0:2], status2
 
     def _data(self):
         
@@ -1735,67 +1693,62 @@ class WheelTorqueAllocation_qp(ModelParameters, Common):
         """
         
         super().__init__()
+
+        alpha_bl = ca.SX.sym('alpha_bl')
+        alpha_fl = ca.SX.sym('alpha_fl')
+        alpha_br = ca.SX.sym('alpha_br')
+        alpha_fr = ca.SX.sym('alpha_fr')
+        contact_bl = ca.SX.sym('contact_bl')
+        contact_fl = ca.SX.sym('contact_fl')
+        contact_br = ca.SX.sym('contact_br')
+        contact_fr = ca.SX.sym('contact_fr')
+        fz_ref = ca.SX.sym('fz_b')
+        fx_ref_l = ca.SX.sym('fx_ref_l')
+        fx_ref_r = ca.SX.sym('fx_ref_r')
+
+        rotation_bl = ca.horzcat( ca.vertcat( ca.cos(alpha_bl), ca.sin(alpha_bl) ),\
+                                  ca.vertcat( -ca.sin(alpha_bl), ca.cos(alpha_bl) ) )
+    
+        rotation_fl = ca.horzcat( ca.vertcat( ca.cos(alpha_fl), ca.sin(alpha_fl) ),\
+                                  ca.vertcat( -ca.sin(alpha_fl), ca.cos(alpha_fl) ) )
+        
+        rotation_br = ca.horzcat( ca.vertcat( ca.cos(alpha_br), ca.sin(alpha_br) ),\
+                                  ca.vertcat( -ca.sin(alpha_br), ca.cos(alpha_br) ) )
+        
+        rotation_fr = ca.horzcat( ca.vertcat( ca.cos(alpha_fr), ca.sin(alpha_fr) ),\
+                                  ca.vertcat( -ca.sin(alpha_fr), ca.cos(alpha_fr) ) )
         
         #   Vector from robot center of mass to each wheel center (w.r.t to body frame)
-        com2bl = ca.vertcat( com2wheel["com2bl"][0], com2wheel["com2bl"][1], com2wheel["com2bl"][2] )
-        com2fl = ca.vertcat( com2wheel["com2fl"][0], com2wheel["com2fl"][1], com2wheel["com2fl"][2] )
-        com2br = ca.vertcat( com2wheel["com2br"][0], com2wheel["com2br"][1], com2wheel["com2br"][2] )
-        com2fr = ca.vertcat( com2wheel["com2fr"][0], com2wheel["com2fr"][1], com2wheel["com2fr"][2] )
-
         com2bl_contact = ca.vertcat( com2wheel["com2bl"][0], com2wheel["com2bl"][1], com2wheel["com2bl"][2] - self.wheelRadius )
         com2fl_contact = ca.vertcat( com2wheel["com2fl"][0], com2wheel["com2fl"][1], com2wheel["com2fl"][2] - self.wheelRadius )
         com2br_contact = ca.vertcat( com2wheel["com2br"][0], com2wheel["com2br"][1], com2wheel["com2br"][2] - self.wheelRadius )
         com2fr_contact = ca.vertcat( com2wheel["com2fr"][0], com2wheel["com2fr"][1], com2wheel["com2fr"][2] - self.wheelRadius )
 
-        S_bl = ca.skew( com2bl_contact )
-        S_fl = ca.skew( com2fl_contact ) 
-        S_br = ca.skew( com2br_contact )
-        S_fr = ca.skew( com2fr_contact )
+        parameters = ca.vertcat( alpha_bl,\
+                                 alpha_fl,\
+                                 alpha_br,\
+                                 alpha_fr,\
+                                 contact_bl,\
+                                 contact_fl,\
+                                 contact_br,\
+                                 contact_fr,\
+                                 fz_ref,\
+                                 fx_ref_l,\
+                                 fx_ref_r )
 
-        #   Wheel velocity w.r.t body frame
-        v_bl = self.lin_vel + ca.cross( self.ang_vel, com2bl )
-        v_fl = self.lin_vel + ca.cross( self.ang_vel, com2fl )
-        v_br = self.lin_vel + ca.cross( self.ang_vel, com2br )
-        v_fr = self.lin_vel + ca.cross( self.ang_vel, com2fr )
-        
-        slip_bl = self.wheelRadius * self.w_bl - v_bl[0, 0]
-        slip_fl = self.wheelRadius * self.w_fl - v_fl[0, 0]
-        slip_br = self.wheelRadius * self.w_br - v_br[0, 0]
-        slip_fr = self.wheelRadius * self.w_fr - v_fr[0, 0]
+        g = ca.vertcat( ca.power(self.fx_l, 2) - ca.power(self.niu * self.fz_bl, 2),\
+                        ca.power(self.fx_l, 2) - ca.power(self.niu * self.fz_fl, 2),\
+                        ca.power(self.fx_r, 2) - ca.power(self.niu * self.fz_br, 2),\
+                        ca.power(self.fx_r, 2) - ca.power(self.niu * self.fz_fr, 2) )
 
-        t_bl = self.torque_l / self.wheelRadius
-        t_fl = self.torque_l / self.wheelRadius
-        t_br = self.torque_r / self.wheelRadius
-        t_fr = self.torque_r / self.wheelRadius
+        y_bl = ( rotation_bl @ ca.vertcat(self.fx_l, self.fz_bl) - ca.vertcat(fx_ref_l, fz_ref) ) * contact_bl
+        y_fl = ( rotation_fl @ ca.vertcat(self.fx_l, self.fz_fl) - ca.vertcat(fx_ref_l, fz_ref) ) * contact_fl
+        y_br = ( rotation_br @ ca.vertcat(self.fx_r, self.fz_br) - ca.vertcat(fx_ref_r, fz_ref) ) * contact_br
+        y_fr = ( rotation_fr @ ca.vertcat(self.fx_r, self.fz_fr) - ca.vertcat(fx_ref_r, fz_ref) ) * contact_fr
 
-        #   Force transferred to the ground by wheel
-        f_bl = ca.vertcat( t_bl, 0.0, self.fz_bl)
-        f_fl = ca.vertcat( t_fl, 0.0, self.fz_fl)
-        f_br = ca.vertcat( t_br, 0.0, self.fz_br)
-        f_fr = ca.vertcat( t_fr, 0.0, self.fz_fr)
+        cost = y_bl.T @ y_bl + y_fl.T @ y_fl + y_br.T @ y_br + y_fr.T @ y_fr
 
-        gravity = self.TransRotationMatrix.T @ ca.vertcat(0, 0, self.gz)
-
-        sumForces = gravity * self.robotMass + f_bl + f_fl + f_br + f_fr - ca.vertcat(self.fx, 0.0, 0.0)
-
-        m_bl = S_bl @ f_bl
-        m_fl = S_fl @ f_fl
-        m_br = S_br @ f_br
-        m_fr = S_fr @ f_fr
-
-        sumMoments = m_bl + m_fl + m_br + m_fr - ca.vertcat(0.0, 0.0, self.mz)
-
-        g = ca.vertcat( ca.power(t_bl, 2) - ca.power(self.niu_c * self.fz_bl * self.niu_c * ca.tanh( 100 * slip_bl ), 2),\
-                        ca.power(t_fl, 2) - ca.power(self.niu_c * self.fz_fl * self.niu_c * ca.tanh( 100 * slip_fl ), 2),\
-                        ca.power(t_br, 2) - ca.power(self.niu_c * self.fz_br * self.niu_c * ca.tanh( 100 * slip_br ), 2),\
-                        ca.power(t_fr, 2) - ca.power(self.niu_c * self.fz_fr * self.niu_c * ca.tanh( 100 * slip_fr ), 2) )
-
-        y = ca.vertcat( sumForces, sumMoments[2, 0], self.torque_l, self.torque_r ) 
-        Q = scipy.linalg.block_diag(self.Q_fn, self.Q_torque)
-
-        cost = y.T @ Q @ y
-
-        nlp = {'x': ca.vertcat(self.fz_wheels, self.torque_l, self.torque_r), 'f': cost, 'g': g, 'p': ca.vertcat(self.roll, self.pitch, self.lin_vel, self.ang_vel, self.fx, self.mz, self.w) }
+        nlp = {'x': ca.vertcat(self.fx_l, self.fx_r, self.fz_wheels), 'f': cost, 'g': g, 'p': parameters}
 
         self.solver = ca.nlpsol('solver', self.optSolver, nlp, self.optOptions)
 
@@ -1803,7 +1756,7 @@ class WheelTorqueAllocation_qp(ModelParameters, Common):
 
         a = time.time()
 
-        res = self.solver(x0 = state, lbx = [0.0, 0.0, 0.0, 0.0, -ca.inf, -ca.inf], ubx = [ca.inf, ca.inf, ca.inf, ca.inf, ca.inf, ca.inf],\
+        res = self.solver(x0 = state, lbx = [-ca.inf, -ca.inf, 0.0, 0.0, 0.0, 0.0], ubx = [ca.inf, ca.inf, ca.inf, ca.inf, ca.inf, ca.inf],\
                                       lbg = [-ca.inf, -ca.inf, -ca.inf, -ca.inf], ubg = [0.0, 0.0, 0.0, 0.0], p = parameters)
 
         print(time.time() - a)
@@ -1815,7 +1768,7 @@ class WheelTorqueAllocation_qp(ModelParameters, Common):
 class wheelRateIntegrator(ModelParameters, Common):
 
     #   Constructor
-    def __init__(self):
+    def __init__(self, com2wheel):
         
         """
             :com2wheel dictionary
@@ -1826,12 +1779,34 @@ class wheelRateIntegrator(ModelParameters, Common):
         state = ca.vertcat(self.w_l, self.w_r)
         controls = ca.vertcat(self.fx_l, self.fx_r)
 
+        com2bl_contact = ca.vertcat( com2wheel["com2bl"][0], com2wheel["com2bl"][1], com2wheel["com2bl"][2] - self.wheelRadius )
+        com2fl_contact = ca.vertcat( com2wheel["com2fl"][0], com2wheel["com2fl"][1], com2wheel["com2fl"][2] - self.wheelRadius )
+        com2br_contact = ca.vertcat( com2wheel["com2br"][0], com2wheel["com2br"][1], com2wheel["com2br"][2] - self.wheelRadius )
+        com2fr_contact = ca.vertcat( com2wheel["com2fr"][0], com2wheel["com2fr"][1], com2wheel["com2fr"][2] - self.wheelRadius )
+
+        #   Gravity
+        gravity = self.TransRotationMatrix.T @ ca.vertcat(0, 0, self.gz)
+        robotWeight = gravity * self.robotMass
+
+        i11 = math.pow(self.wheelRadius, 2) * ( self.robotMass / 4 + self.izz / math.pow( 2 * com2bl_contact[1], 2) )
+        i22 = i11
+        i12 = math.pow(self.wheelRadius, 2) * (self.robotMass/ 4 - self.izz / math.pow( 2 * com2bl_contact[1], 2) )
+        i21 = i12
+
+        inertiaMatrix = ca.horzcat( ca.vertcat(i11, i21), ca.vertcat(i12, i22) )
+
+        print("Inertia matrix: ", inertiaMatrix)
+
+        sum_fx = 2 * self.fx_l + 2 * self.fx_r + robotWeight[0]
+        sum_mz = -self.fx_l * com2bl_contact[1] - self.fx_l * com2fl_contact[1] - self.fx_r * com2br_contact[1] - self.fx_r * com2fr_contact[1]
+
+        lw = 2 * com2bl_contact[1]
+
         model = AcadosModel()
 
         model.x = state
         model.u = controls
-        model.f_expl_expr = ca.vertcat( (self.fx_l * self.wheelRadius) / self.i_wheel,\
-                                        (self.fx_r * self.wheelRadius) / self.i_wheel )
+        model.f_expl_expr = ca.inv_minor(inertiaMatrix) @ (self.wheelRadius * ca.vertcat(self.fx_l, self.fx_r) - 0.7 * self.wheelRadius * ca.vertcat(self.fx_l, self.fx_r))
         model.name = "integrator_wheelrate"
 
         #   Call dims instance
