@@ -63,7 +63,7 @@ if __name__ == '__main__':
         radius:   radius
     """
     alpha = 0.9
-    radius = 0.3
+    radius = 0.2
 
     t1 = 0.6
     a = 0.2

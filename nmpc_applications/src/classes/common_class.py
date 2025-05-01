@@ -25,22 +25,21 @@ class Common:
     """
     nbWheels = 4
 
-    #   0: pioneer3at
-    #   1: husky
-    robot = "pioneer3at"
+    robot = "leo"
 
-    if( robot == "husky" ):
-        #   Husky parameters
-        wheelLatSeparation = 0.5708
-        wheelLonSeparation = 0.512
-        wheelWidth = 0.05
+    if( robot == "leo" ):
+        #   Leo rover parameters
+        wheelLatSeparation = 0.448
+        wheelLonSeparation = 0.305
+        wheelRadius = 0.065
+        robotLength = 0.435
+        """wheelWidth = 0.05
         robotWidth = 0.67
         robotLength = 0.988
         robotHeight = 0.388
-        wheelRadius = 0.165
-        robotContactArea = robotWidth * wheelLonSeparation
+        robotContactArea = robotWidth * wheelLonSeparation"""
         
-        robotMass = 53.512
+        robotMass = 5.495478
 
         ixx = 9.750858276455656
         ixy = -0.015058500000000002
@@ -51,20 +50,18 @@ class Common:
         
         izz = 11.808587634684864
 
-        i_wheel = 0.04411
+        i_wheel = 0.0004716
 
     elif( robot == "pioneer3at" ):
         #   Pioneer 3AT parameters
-        depth = 0.0007
         wheelRadius = 0.111
-        loadRadius = wheelRadius - depth
-        wheelWidth = 0.04
         wheelLonSeparation = 0.268
         wheelLatSeparation = 0.394
-        robotWidth = 0.497
         robotLength = 0.508
+        """wheelWidth = 0.04
+        robotWidth = 0.497
         robotHeight = 0.277
-        robotContactArea = robotWidth * wheelLonSeparation
+        robotContactArea = robotWidth * wheelLonSeparation"""
 
         robotMass = 27.4
 
@@ -88,7 +85,7 @@ class Common:
         2 -> add terrain correction
         3 -> add parameter estimation
     """
-    simulationType = 2
+    simulationType = 0
 
     """
         Convex inner approximation iteration parameters
@@ -220,33 +217,33 @@ class Common:
     """ Penalty Matrices """
     
     #   Kinematics costs    ##################
-    Q_p_kin = 2 * np.diag( [ 1e-1, 1e-1, 0e0 ] )                                  
-    Q_o_kin = 2 * np.diag( [ 0e0, 0e0, 1e0 ] )  
+    Q_p_kin = 2 * np.diag( [ 1e0, 1e0, 0e0 ] )                                  
+    Q_o_kin = 2 * np.diag( [ 0e0, 0e0, 1e1 ] )  
 
     Q_vx_kin = 2 * 1e0
-    Q_wz_kin = 2 * 1e-1
+    Q_wz_kin = 2 * 1e0
 
-    Q_p_kin_t = 2 * np.diag( [ 1e-1, 1e-1, 0e0 ] )                                  
-    Q_o_kin_t = 2 * np.diag( [ 0e0, 0e0, 1e0 ] )  
+    Q_p_kin_t = 2 * np.diag( [ 1e0, 1e0, 0e0 ] )                                  
+    Q_o_kin_t = 2 * np.diag( [ 0e0, 0e0, 1e1 ] )  
 
-    Q_vx_kin_t = 2 * 1e-1                           
-    Q_wz_kin_t = 2 * 2e-1
+    Q_vx_kin_t = 2 * 1e0                           
+    Q_wz_kin_t = 2 * 1e0
     ##########################################
 
     #   Simplified dynamics costs   ##########
     Q_p_simple_dyn = 2 * np.diag( [ 5e0, 5e0, 1e-2] )
     Q_o_simple_dyn = 2 * np.diag( [ 1e-2, 1e-2, 5e1 ] )  
 
-    Q_vx_simple_dyn = 2 * 1e1
-    Q_vy_simple_dyn = 2 * 5e2
-    Q_wz_simple_dyn = 2 * 1e1
+    Q_vx_simple_dyn = 2 * 1e0
+    Q_vy_simple_dyn = 2 * 1e2
+    Q_wz_simple_dyn = 2 * 1e0
 
     Q_p_simple_dyn_t = 2 * np.diag( [ 5e0, 5e0, 1e-2 ] )                                  
     Q_o_simple_dyn_t = 2 * np.diag( [ 1e-2, 1e-2, 5e1 ] )  
 
-    Q_vx_simple_dyn_t = 2 * 1e1
-    Q_vy_simple_dyn_t = 2 * 5e2
-    Q_wz_simple_dyn_t = 2 * 1e1
+    Q_vx_simple_dyn_t = 2 * 1e0
+    Q_vy_simple_dyn_t = 2 * 1e2
+    Q_wz_simple_dyn_t = 2 * 1e0
 
     Q_f_simple_dyn = 2 * np.diag( [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3] )
 
@@ -459,6 +456,10 @@ class Common:
         
         elif( option == 31 ):
             self.clock = msg
+        
+        #   Wheel contact forces
+        elif( option == 32 ):
+            self.wheelForces = msg
     
     def _wheelLoad(self, msg, option):
 
@@ -560,7 +561,7 @@ class Common:
 
         for model in worldProperties.model_names:
 
-            if( model[-7:] == "vehicle" ):
+            if( model == "vehicle" ):
                 vehicleProperties = modelPropertiesService( model )
         
         return vehicleProperties
@@ -648,20 +649,22 @@ class Common:
         linkIndex = 0
 
         for link in links.name:
+
+            print(link.split( "::", 1 )[1])
             
-            if( link.split( "::", 1 )[1] == "base_link" ):
+            if( "base_link" in link ):
                 baseLinkIndex = linkIndex
                 
-            elif( link.split( "::", 1 )[1] == "back_left_wheel" ):
+            elif( "back_left_wheel" in link ):
                 backLeftIndex = linkIndex
             
-            elif( link.split( "::", 1 )[1] == "front_left_wheel" ):
+            elif( "front_left_wheel" in link ):
                 frontLeftIndex = linkIndex
             
-            elif( link.split( "::", 1 )[1] == "back_right_wheel" ):
+            elif( "back_right_wheel" in link ):
                 backRightIndex = linkIndex
 
-            elif( link.split( "::", 1 )[1] == "front_right_wheel" ):
+            elif( "front_right_wheel" in link ):
                 frontRightIndex = linkIndex
 
             linkIndex += 1
@@ -695,6 +698,8 @@ class Common:
         index = 0
 
         for wheel in wheelVelocities.wheel:
+
+            print("Wheel: ", wheel)
 
             if( wheel == "base_link" ):
                 baseLinkIndex = index

@@ -1,6 +1,8 @@
 #!/usr/bin/python3.8
 
 import sys
+
+import scipy.linalg
 sys.path.insert(0, "/media/fmccastro/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/src")
 
 from classes.all_imports import *
@@ -1266,423 +1268,6 @@ class Dynamics(ModelParameters, Common):
     def _simulate(self, state, controls):
         return self.integrator.simulate(x = state, u = controls)
 
-class WheelTorqueAllocation(ModelParameters, Common):
-
-    #   Constructor
-    def __init__(self, com2wheel):
-        
-        """
-            :com2wheel dictionary
-        """
-        
-        super().__init__()
-
-        #   State
-        state = ca.vertcat(self.w)
-        
-        #   Derivative state
-        state_dot = ca.vertcat(self.w_dot)
-
-        #   Parameters
-        parameters = ca.vertcat(self.roll, self.pitch, self.lin_vel, self.ang_vel, self.fx, self.mz)
-
-        #   Controls (normals forces and wheel torques)
-        controls = ca.vertcat(self.fz_wheels, self.torque_l, self.torque_r)
-        
-        #   Gravity
-        gravity = self.TransRotationMatrix.T @ ca.vertcat(0, 0, self.gz)
-        
-        #   Vector from robot center of mass to each wheel center (w.r.t to body frame)
-        com2bl = ca.vertcat( com2wheel["com2bl"][0], com2wheel["com2bl"][1], com2wheel["com2bl"][2] )
-        com2fl = ca.vertcat( com2wheel["com2fl"][0], com2wheel["com2fl"][1], com2wheel["com2fl"][2] )
-        com2br = ca.vertcat( com2wheel["com2br"][0], com2wheel["com2br"][1], com2wheel["com2br"][2] )
-        com2fr = ca.vertcat( com2wheel["com2fr"][0], com2wheel["com2fr"][1], com2wheel["com2fr"][2] )
-
-        com2bl_contact = ca.vertcat( com2wheel["com2bl"][0], com2wheel["com2bl"][1], com2wheel["com2bl"][2] - self.wheelRadius )
-        com2fl_contact = ca.vertcat( com2wheel["com2fl"][0], com2wheel["com2fl"][1], com2wheel["com2fl"][2] - self.wheelRadius )
-        com2br_contact = ca.vertcat( com2wheel["com2br"][0], com2wheel["com2br"][1], com2wheel["com2br"][2] - self.wheelRadius )
-        com2fr_contact = ca.vertcat( com2wheel["com2fr"][0], com2wheel["com2fr"][1], com2wheel["com2fr"][2] - self.wheelRadius )
-
-        S_bl = ca.skew( com2bl_contact )
-        S_fl = ca.skew( com2fl_contact ) 
-        S_br = ca.skew( com2br_contact )
-        S_fr = ca.skew( com2fr_contact )
-
-        #   Wheel velocity w.r.t body frame
-        v_bl = self.lin_vel + ca.cross( self.ang_vel, com2bl )
-        v_fl = self.lin_vel + ca.cross( self.ang_vel, com2fl )
-        v_br = self.lin_vel + ca.cross( self.ang_vel, com2br )
-        v_fr = self.lin_vel + ca.cross( self.ang_vel, com2fr )
-        
-        slip_bl = self.wheelRadius * self.w_bl - v_bl[0, 0]
-        slip_fl = self.wheelRadius * self.w_fl - v_fl[0, 0]
-        slip_br = self.wheelRadius * self.w_br - v_br[0, 0]
-        slip_fr = self.wheelRadius * self.w_fr - v_fr[0, 0]
-
-        #   Traction
-        #traction_1_bl = self.torque_l / self.loadRadius
-        #traction_1_fl = self.torque_l / self.loadRadius
-        #traction_1_br = self.torque_r / self.loadRadius
-        #traction_1_fr = self.torque_r / self.loadRadius
-
-        #traction_2_bl = self.niu_c * self.fz_bl * ca.tanh( 1e2 * self.torque_l )
-        #traction_2_fl = self.niu_c * self.fz_fl * ca.tanh( 1e2 * self.torque_l )
-        #traction_2_br = self.niu_c * self.fz_br * ca.tanh( 1e2 * self.torque_r )
-        #traction_2_fr = self.niu_c * self.fz_fr * ca.tanh( 1e2 * self.torque_r )
-
-        #a_t_bl = ca.sqrt( ca.power( self.torque_l / self.loadRadius, 2 ) + 1e-6 ) - self.niu_c * self.fz_bl
-        #a_t_fl = ca.sqrt( ca.power( self.torque_l / self.loadRadius, 2 ) + 1e-6 ) - self.niu_c * self.fz_fl
-        #a_t_br = ca.sqrt( ca.power( self.torque_r / self.loadRadius, 2 ) + 1e-6 ) - self.niu_c * self.fz_br
-        #a_t_fr = ca.sqrt( ca.power( self.torque_r / self.loadRadius, 2 ) + 1e-6 ) - self.niu_c * self.fz_fr
-
-        #sigmoid_a_t_bl = 1 / ( 1 + ca.exp( -a_t_bl ) )
-        #sigmoid_a_t_fl = 1 / ( 1 + ca.exp( -a_t_fl ) )
-        #sigmoid_a_t_br = 1 / ( 1 + ca.exp( -a_t_br ) )
-        #sigmoid_a_t_fr = 1 / ( 1 + ca.exp( -a_t_fr ) )
-
-        #   Lateral friction
-        #lat_f_bl = -self.niu_c * self.fz_bl * ca.tanh( 1e2 * v_bl[1] )
-        #lat_f_fl = -self.niu_c * self.fz_fl * ca.tanh( 1e2 * v_fl[1] )
-        #lat_f_br = -self.niu_c * self.fz_br * ca.tanh( 1e2 * v_br[1] )
-        #lat_f_fr = -self.niu_c * self.fz_fr * ca.tanh( 1e2 * v_fr[1] )
-
-        #t_bl = ( (1 - sigmoid_a_t_bl) * traction_1_bl + sigmoid_a_t_bl * traction_2_bl ) * ca.tanh( 1e2 * ca.sqrt( ca.power( slip_bl, 2 ) + 1e-6 ) )
-        #t_fl = ( (1 - sigmoid_a_t_fl) * traction_1_fl + sigmoid_a_t_fl * traction_2_fl ) * ca.tanh( 1e2 * ca.sqrt( ca.power( slip_fl, 2 ) + 1e-6 ) )
-        #t_br = ( (1 - sigmoid_a_t_br) * traction_1_br + sigmoid_a_t_br * traction_2_br ) * ca.tanh( 1e2 * ca.sqrt( ca.power( slip_br, 2 ) + 1e-6 ) )
-        #t_fr = ( (1 - sigmoid_a_t_fr) * traction_1_fr + sigmoid_a_t_fr * traction_2_fr ) * ca.tanh( 1e2 * ca.sqrt( ca.power( slip_fr, 2 ) + 1e-6 ) )
-
-        t_bl = self.torque_l / self.wheelRadius
-        t_fl = self.torque_l / self.wheelRadius
-        t_br = self.torque_r / self.wheelRadius
-        t_fr = self.torque_r / self.wheelRadius
-
-        #t_bl = self.niu_c * self.fz_bl * ca.tanh(1e2 * slip_bl)
-        #t_fl = self.niu_c * self.fz_fl * ca.tanh(1e2 * slip_fl)
-        #t_br = self.niu_c * self.fz_br * ca.tanh(1e2 * slip_br)
-        #t_fr = self.niu_c * self.fz_fr * ca.tanh(1e2 * slip_fr)
-
-        #   Force transferred to the ground by wheel
-        f_bl = ca.vertcat( t_bl, 0.0, self.fz_bl)
-        f_fl = ca.vertcat( t_fl, 0.0, self.fz_fl)
-        f_br = ca.vertcat( t_br, 0.0, self.fz_br)
-        f_fr = ca.vertcat( t_fr, 0.0, self.fz_fr)
-
-        gravity = self.TransRotationMatrix.T @ ca.vertcat(0, 0, self.gz)
-
-        sumForces = gravity * self.robotMass + f_bl + f_fl + f_br + f_fr - ca.vertcat(self.fx, 0.0, 0.0)
-
-        m_bl = S_bl @ f_bl
-        m_fl = S_fl @ f_fl
-        m_br = S_br @ f_br
-        m_fr = S_fr @ f_fr
-
-        sumMoments = m_bl + m_fl + m_br + m_fr - ca.vertcat(0.0, 0.0, self.mz)
-
-        """f_expl = ca.vertcat( 1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_l - self.wheelRadius * t_bl ),\
-                             1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_l - self.wheelRadius * t_fl ),\
-                             1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_r - self.wheelRadius * t_br ),\
-                             1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_r - self.wheelRadius * t_fr ) )"""
-
-        """f_impl = ca.vertcat( self.d_w_bl - 1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_l - self.wheelRadius * t_bl ),\
-                             self.d_w_fl - 1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_l - self.wheelRadius * t_fl ),\
-                             self.d_w_br - 1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_r - self.wheelRadius * t_br ),\
-                             self.d_w_fr - 1 / self.i_wheel * ( self.i_wheel * gravity[0] / self.wheelRadius + self.torque_r - self.wheelRadius * t_fr ) )"""
-
-        #   Call model instance
-        model = AcadosModel()
-
-        #model.f_impl_expr = f_impl
-        #model.f_expl_expr = f_expl
-        
-        #model.x = state
-        #model.xdot = state_dot
-        model.u = controls
-        model.p = parameters
-        model.con_h_expr_0 = ca.vertcat( ca.power(t_bl, 2) - ca.power(self.niu_c * self.fz_bl * self.niu_c * ca.tanh( 100 * slip_bl ), 2),\
-                                         ca.power(t_fl, 2) - ca.power(self.niu_c * self.fz_fl * self.niu_c * ca.tanh( 100 * slip_fl ), 2),\
-                                         ca.power(t_br, 2) - ca.power(self.niu_c * self.fz_br * self.niu_c * ca.tanh( 100 * slip_br ), 2),\
-                                         ca.power(t_fr, 2) - ca.power(self.niu_c * self.fz_fr * self.niu_c * ca.tanh( 100 * slip_fr ), 2) )
-        
-        model.con_h_expr = ca.vertcat( ca.power(t_bl, 2) - ca.power(self.niu_c * self.fz_bl * self.niu_c * ca.tanh( 100 * slip_bl ), 2),\
-                                       ca.power(t_fl, 2) - ca.power(self.niu_c * self.fz_fl * self.niu_c * ca.tanh( 100 * slip_fl ), 2),\
-                                       ca.power(t_br, 2) - ca.power(self.niu_c * self.fz_br * self.niu_c * ca.tanh( 100 * slip_br ), 2),\
-                                       ca.power(t_fr, 2) - ca.power(self.niu_c * self.fz_fr * self.niu_c * ca.tanh( 100 * slip_fr ), 2) )
-        
-        model.name = "wheel_force_allocation"
-
-        #model.x_labels = ['$w_l$ [rad/s]', '$w_r$ [rad/s]']
-        model.u_labels = [r'fz_bl [N]', r'fz_fl [N]', r'fz_br [N]', r'fz_fr [N]', r'tau_l [Nm]', r'tau_r [Nm]']
-        model.t_label = '$t$ [s]'
-
-        y_0 = ca.vertcat( sumForces, sumMoments[2, 0], self.torque_l, self.torque_r )
-        y = ca.vertcat( sumForces, sumMoments[2, 0], self.torque_l, self.torque_r )
-        #y_e = self.w
-
-        model.cost_expr_ext_cost_0 = y_0.T @ scipy.linalg.block_diag( self.Q_fn, self.Q_torque ) @ y_0
-        #model.cost_expr_ext_cost = y.T @ scipy.linalg.block_diag( self.Q_fn, self.Q_torque ) @ y
-        #model.cost_expr_ext_cost_e = 1
-        #model.cost_expr_ext_cost_e = y_e.T @ scipy.linalg.block_diag( self.Q_wheel_rate ) @ y_e
-        ###
-
-        #   Call dims instance
-        dims = AcadosOcpDims()
-
-        dims.N = 1
-        dims.nu = model.u.rows()
-        #dims.nx = model.x.rows()
-        dims.np = model.p.rows()
-        #dims.ng = 2
-        #dims.ng_e = 2
-        ###
-        
-        self.nx = dims.nx
-        self.nu = dims.nu
-        self.np = dims.np
-
-        #   Call cost instance
-        cost = AcadosOcpCost()
-
-        cost.cost_type_0 = 'EXTERNAL'
-        #cost.cost_type = 'EXTERNAL'
-        #cost.cost_type_e = 'EXTERNAL'
-
-        cost.cost_ext_fun_type_0 = 'casadi'
-        #cost.cost_ext_fun_type = 'casadi'
-        #cost.cost_ext_fun_type_e = 'casadi'
-        ###
-
-        #  Call constraints instance
-        constraints = AcadosOcpConstraints()
-
-        """constraints.C = np.array( [ [0.0, 0.0, 0.0, 0.0],\
-                                    [0.0, 0.0, 0.0, 0.0] ] )
-        
-        constraints.C_e = np.array( [ [0.0, 0.0, 0.0, 0.0],\
-                                      [0.0, 0.0, 0.0, 0.0] ] )
-        
-        constraints.D = np.array( [ [0.0, 0.0, 0.0, 0.0, 1 / self.wheelRadius, 1 / self.wheelRadius],\
-                                    [0.0, 0.0, 0.0, 0.0, 1 / self.wheelRadius, 1 / self.wheelRadius] ] )"""
-
-        """constraints.lg = np.stack( [self., 0] )
-        constraints.lg_e = np.stack( [0, 0] )
-
-        constraints.ug = np.stack( [0, 0] )
-        constraints.ug_e = np.stack( [0, 0] )"""
-
-        constraints.lbu = np.stack( self.fn_lb + self.torque_lb )
-        constraints.ubu = np.stack( self.fn_ub + self.torque_ub )
-
-        #constraints.lh_0 = np.stack( [-999999.0, -999999.0, -999999.0, -999999.0] )
-        #constraints.lh = np.stack( [-999999.0, -999999.0, -999999.0, -999999.0] )
-
-        #constraints.uh_0 = np.stack( [0, 0, 0, 0] )
-        #constraints.uh = np.stack( [0, 0, 0, 0] )
-
-        constraints.idxbu = np.array( [0, 1, 2, 3, 4, 5] )
-
-        #constraints.x0 = np.stack( [0, 0, 0, 0] )
-        ###
-        
-        #   Call solver options instance
-        solver_options = AcadosOcpOptions()
-
-        solver_options.N_horizon = self.N
-        solver_options.tf = self.Ts * self.N
-        solver_options.Tsim = self.Ts
-        solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
-        solver_options.hessian_approx = 'EXACT'
-        solver_options.integrator_type = 'ERK'
-        
-        if( self.nlp_solver_type == 'SQP_RTI' ):
-            solver_options.nlp_solver_type = self.nlp_solver_type
-
-        elif( self.nlp_solver_type == 'SQP' ):
-            solver_options.nlp_solver_type = self.nlp_solver_type
-            solver_options.globalization = 'FIXED_STEP'
-            solver_options.nlp_solver_max_iter = 50
-
-        solver_options.qp_solver_warm_start = 1
-        solver_options.qp_solver_cond_N = self.N
-        solver_options.print_level = 0
-        solver_options.regularize_method = 'CONVEXIFY'
-        solver_options.sim_method_num_stages = 4
-        solver_options.sim_method_num_steps = 3
-        solver_options.sim_method_newton_iter = 20
-        solver_options.qp_solver_iter_max = 25
-        solver_options.num_threads_in_batch_solve = 4
-        solver_options.line_search_use_sufficient_descent = 0
-        solver_options.levenberg_marquardt = 0.0
-        #solver_options.output_z = False
-        solver_options.qp_tol = 1e-1
-        solver_options.tol = 1e-1
-        #ocp.solver_options.ext_cost_num_hess = 1
-        ###
-
-        #   Call ocp instance
-        ocp = AcadosOcp()
-
-        #   Set ocp
-        ocp.model = model
-        ocp.cost = cost
-        ocp.dims = dims
-        ocp.solver_options = solver_options
-        ocp.constraints = constraints
-        ocp.parameter_values = np.ones( dims.np )
-
-        #   Set folder path where generated c code is located
-        ocp.code_export_directory = "/media/fmccastro/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/scripts/acados_c_generated_code/WheelTorqueAllocation/acadosOcp"
-        ocp.acados_lib_path = "/media/fmccastro/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/acados/lib"
-        ocp.acados_include_path = "/media/fmccastro/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/acados/include"
-
-        json_file_path = "/media/fmccastro/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/scripts/acados_c_generated_code/WheelTorqueAllocation/acadosOcp/acados_ocp.json"
-        ###
-
-        self.solver = AcadosOcpSolver(ocp, json_file = json_file_path)
-
-    def _constraints(self, initialState, pathReference, velocityReference, forcesReference):
-
-        """
-            Return constraints to input at NMPC model on each iteration
-
-            :initialState       [w_l, w_r]
-            :velocityReference  [vx, wz]_ref
-            :pathReference      [x, y, z, roll, pitch, yaw]_ref
-        """
-
-        #   Set initial state
-        #self.solver.set(0, 'lbx', np.stack( initialState ) )
-        #self.solver.set(0, 'ubx', np.stack( initialState ) )
-
-        #print(len(initialState), len(pathReference), len(velocityReference), len(forcesReference))
-        #print("\n")
-
-        for i in range(self.N + 1):
-            reference = np.stack( [ pathReference[i * (self.NbPosition + self.NbOrientation) + 3],  pathReference[i * (self.NbPosition + self.NbOrientation) + 4] ]\
-                                    + velocityReference[ i * 6 : (i + 1) * 6 ] + forcesReference[i * 2 : (i + 1) * 2] )
-            
-            #print(f"Reference {i}: ", reference)
-            
-            self.solver.set(i, 'p', reference )
-        
-    def _setInitialGuess(self, numIter, initialState, pathReference, velocityReference, forcesMomentsReference):
-        
-        """
-            :numIter int type, number of iterations
-            :velocity                       [vx, vy, vz, wx, wy, wz]
-            :velocityReference              [vx, wz]_ref
-            :pathReference                  [x, y, z, roll, pitch, yaw]_ref
-        """
-
-        print("(wl, wr): ", initialState)
-        print("(roll, pitch): ", pathReference[3], pathReference[4])
-        print("(fx, mz): ", forcesMomentsReference[0], forcesMomentsReference[1])
-
-        # do some initial iterations to start with a good initial guess
-        for _ in range(numIter):
-
-            self._constraints(initialState, pathReference, velocityReference, forcesMomentsReference)
-
-            u0 = self.solver.solve_for_x0(x0_bar = np.stack( initialState ))
-
-            #self.solver.dump_last_qp_to_json("/home/fmccastro/Desktop/last_qp.json")
-
-            print("Total time: ", self.solver.get_stats("time_tot"))
-    
-    def _solve(self, initialState, pathReference, velocityReference, forcesReference):
-
-        """
-            :initialState                   [w_l, w_r]_0
-            :pathReference                  [x, y, z, roll, pitch, yaw]_ref
-            :velocityReference              [vx, wz]_ref
-            :forcesReference                [fx, mz]_ref
-        """
-
-        if( self.nlp_solver_type == 'SQP' ):
-            #   Retrieve optimization problem constraints, initial guess and parameters
-            self._constraints(initialState, pathReference, velocityReference, forcesReference)
-
-            status = self.solver.solve()
-
-            #print("Total time: ", self.solver.get_stats("time_tot"))
-
-            if status != 0:
-                print("acados returned status {} in closed loop iteration.".format(status))
-
-        elif( self.nlp_solver_type == 'SQP_RTI' ):
-            self.solver.options_set('rti_phase', 1)
-            status1 = self.solver.solve()
-
-            t_preparation = self.solver.get_stats("time_tot")
-
-            #   Retrieve optimization problem constraints, initial guess and parameters
-            self._constraints(initialState, pathReference, velocityReference, forcesReference)
-
-            self.solver.options_set('rti_phase', 2)
-            status2 = self.solver.solve()
-
-            t_feedback = self.solver.get_stats("time_tot")
-
-            print("Total time: ", t_preparation + t_feedback)
-
-            if( status1 != 0 or status2 != 0 ):
-                print("acados returned status {} in preparation phase.".format(status1))
-                print("acados returned status {} in feedback phase.".format(status2))
-        
-        #self.solver.print_statistics()
-
-        solutionX, normalForces, wheelTorques = self._data()
-
-        return solutionX, normalForces, wheelTorques
-
-    def _data(self):
-        
-        """ 
-            Optimization solution data treatment
-
-            solution: dictionary returned by casadi solver
-        """ 
-        
-        solutionX = []
-        solutionU = []
-
-        for i in range(self.N + 1):
-            #   solutionX -> get optimized states solution
-            opt_x = self.solver.get(i, 'x')
-
-            if( i == 1 ):
-                pass
-                #next_w_l = opt_x[0]
-                #next_w_r = opt_x[2]
-
-            #solutionX += list(opt_x) 
-
-            if(i < self.N):
-                #   solutionU -> get optimized controls solution
-                opt_u = self.solver.get(i, 'u')
-
-                if( i == 0 ):
-                    #next_fy_bl = opt_u[0]
-                    #next_fy_fl = opt_u[1]
-                    #next_fy_br = opt_u[2]
-                    #next_fy_fr = opt_u[3]
-
-                    next_fz_bl = opt_u[0]
-                    next_fz_fl = opt_u[1]
-                    next_fz_br = opt_u[2]
-                    next_fz_fr = opt_u[3]
-
-                    next_torque_l = opt_u[4]
-                    next_torque_r = opt_u[5]
-                
-                solutionU += list(opt_u)
-        
-        #wheelRates = [next_w_l, next_w_r]
-        #lateralForces = [next_fy_bl, next_fy_fl, next_fy_br, next_fy_fr]
-        normalForces = [next_fz_bl, next_fz_fl, next_fz_br, next_fz_fr]
-        wheelTorques = [next_torque_l, next_torque_r]
-
-        return solutionU, normalForces, wheelTorques
-
 class WheelTorqueAllocation_qp(ModelParameters, Common):
 
     #   Constructor
@@ -1694,76 +1279,196 @@ class WheelTorqueAllocation_qp(ModelParameters, Common):
         
         super().__init__()
 
-        alpha_bl = ca.SX.sym('alpha_bl')
-        alpha_fl = ca.SX.sym('alpha_fl')
-        alpha_br = ca.SX.sym('alpha_br')
-        alpha_fr = ca.SX.sym('alpha_fr')
-        contact_bl = ca.SX.sym('contact_bl')
-        contact_fl = ca.SX.sym('contact_fl')
-        contact_br = ca.SX.sym('contact_br')
-        contact_fr = ca.SX.sym('contact_fr')
-        fz_ref = ca.SX.sym('fz_b')
-        fx_ref_l = ca.SX.sym('fx_ref_l')
-        fx_ref_r = ca.SX.sym('fx_ref_r')
+        self.com2bl_contact = np.array( [ com2wheel["com2bl"][0], com2wheel["com2bl"][1], com2wheel["com2bl"][2] - self.wheelRadius ] )
+        self.com2fl_contact = np.array( [ com2wheel["com2fl"][0], com2wheel["com2fl"][1], com2wheel["com2fl"][2] - self.wheelRadius ] )
+        self.com2br_contact = np.array( [ com2wheel["com2br"][0], com2wheel["com2br"][1], com2wheel["com2br"][2] - self.wheelRadius ] )
+        self.com2fr_contact = np.array( [ com2wheel["com2fr"][0], com2wheel["com2fr"][1], com2wheel["com2fr"][2] - self.wheelRadius ] )
 
-        rotation_bl = ca.horzcat( ca.vertcat( ca.cos(alpha_bl), ca.sin(alpha_bl) ),\
-                                  ca.vertcat( -ca.sin(alpha_bl), ca.cos(alpha_bl) ) )
-    
-        rotation_fl = ca.horzcat( ca.vertcat( ca.cos(alpha_fl), ca.sin(alpha_fl) ),\
-                                  ca.vertcat( -ca.sin(alpha_fl), ca.cos(alpha_fl) ) )
+        # check that env.sh has been run
+        env_run = os.getenv('ENV_RUN')
+        if env_run!='true':
+            print('ERROR: env.sh has not been sourced! Before executing this example, run:')
+            print('source env.sh')
+            sys.exit(1)
+
+        travis_run = os.getenv('TRAVIS_RUN')
+        #travis_run = 'true'
+
+        # define flags
+        warm_start = 1 # set to 1 to warm-start the primal variable
+
+        #   dim
+        nv = 8
+        ne = 10
+        nb = 8
+        ng = 8
+
+        self.dim = hpipm_dense_qp_dim()
+
+        self.dim.set('nv', nv)
+        self.dim.set('nb', nb)
+        self.dim.set('ne', ne)
+        self.dim.set('ng', ng)
+
+        # set up solver arg
+        #mode = 'speed_abs'
+        mode = 'speed'
+        #mode = 'balance'
+        #mode = 'robust'
+        # create and set default arg based on mode
+        self.arg = hpipm_dense_qp_solver_arg(self.dim, mode)
+
+        # create and set default arg based on mode
+        self.arg.set('mu0', 1e4)
+        self.arg.set('iter_max', 30)
+        self.arg.set('tol_stat', 1e-4)
+        self.arg.set('tol_eq', 1e-5)
+        self.arg.set('tol_ineq', 1e-5)
+        self.arg.set('tol_comp', 1e-5)
+        self.arg.set('reg_prim', 1e-12)
+        self.arg.set('warm_start', warm_start)
+
+        #   qp
+        self.qp = hpipm_dense_qp(self.dim)
+
+        #   qp_sol
+        self.qp_sol = hpipm_dense_qp_sol(self.dim)
+
+        #   solver
+        self.solver = hpipm_dense_qp_solver(self.dim, self.arg)
+
+        # if warm_start=1, then the primal variable is initialized from qp_sol
+        """
+        # set up solver
+        solver = hpipm_dense_qp_solver(dim, arg)
+
+        start_time = time.time()
+        solver.solve(qp, qp_sol)
+        end_time = time.time()
+        if(travis_run!='true'):
+            print('solve time {:e}'.format(end_time - start_time))
+
+        v = qp_sol.get('v')
+        pi = qp_sol.get('pi')
+        lam_lb = qp_sol.get('lam_lb')
+        lam_ub = qp_sol.get('lam_ub')
+        lam_lg = qp_sol.get('lam_lg')
+        lam_ug = qp_sol.get('lam_ug')
+        print('v      = {}'.format(v.flatten()))
+        print('pi     = {}'.format(pi.flatten()))
+        print('lam_lb = {}'.format(lam_lb.flatten()))
+        print('lam_ub = {}'.format(lam_ub.flatten()))
+        print('lam_lg = {}'.format(lam_lg.flatten()))
+        print('lam_ug = {}'.format(lam_ug.flatten()))
+
+        # get solver statistics
+        status = solver.get('status')
+        res_stat = solver.get('max_res_stat')
+        res_eq = solver.get('max_res_eq')
+        res_ineq = solver.get('max_res_ineq')
+        res_comp = solver.get('max_res_comp')
+        iters = solver.get('iter')
+        stat = solver.get('stat')
+        if(travis_run!='true'):
+            print('\nsolver statistics:\n')
+            print('ipm return = {0:1d}\n'.format(status))
+            print('ipm max res stat = {:e}\n'.format(res_stat))
+            print('ipm max res eq   = {:e}\n'.format(res_eq))
+            print('ipm max res ineq = {:e}\n'.format(res_ineq))
+            print('ipm max res comp = {:e}\n'.format(res_comp))
+            print('ipm iter = {0:1d}\n'.format(iters))
+            print('stat =')
+            print('\titer\talpha_aff\tmu_aff\t\tsigma\t\talpha_prim\talpha_dual\tmu\t\tres_stat\tres_eq\t\tres_ineq\tres_comp')
+            for ii in range(iters+1):
+                print('\t{:d}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}'.format(ii, stat[ii][0], stat[ii][1], stat[ii][2], stat[ii][3], stat[ii][4], stat[ii][5], stat[ii][6], stat[ii][7], stat[ii][8], stat[ii][9]))
+            print('')
+
+        if status==0:
+            print('\nsuccess!\n')
+        else:
+            print('\nSolution failed, solver returned status {0:1d}\n'.format(status))"""
+
+    def _setSolver(self, parameters):
+
+        alpha_bl = parameters[0]
+        alpha_fl = parameters[1]
+        alpha_br = parameters[2]
+        alpha_fr = parameters[3]
+        contact_status_bl = parameters[4]
+        contact_status_fl = parameters[5]
+        contact_status_br = parameters[6]
+        contact_status_fr = parameters[7]
+        fz_ref = parameters[8]
+        fx_ref_l = parameters[9]
+        fx_ref_r = parameters[10]
+
+        y_bl = self.com2bl_contact[1]
+        y_fl = self.com2fl_contact[1]
+        y_br = self.com2br_contact[1]
+        y_fr = self.com2fr_contact[1]
+
+        A_bl = np.array( [ [ ca.cos(alpha_bl), -ca.sin(alpha_bl) ], [ ca.sin(alpha_bl), ca.cos(alpha_bl) ] ] )
+        A_fl = np.array( [ [ ca.cos(alpha_fl), -ca.sin(alpha_fl) ], [ ca.sin(alpha_fl), ca.cos(alpha_fl) ] ] )
+        A_br = np.array( [ [ ca.cos(alpha_br), -ca.sin(alpha_br) ], [ ca.sin(alpha_br), ca.cos(alpha_br) ] ] )
+        A_fr = np.array( [ [ ca.cos(alpha_fr), -ca.sin(alpha_fr) ], [ ca.sin(alpha_fr), ca.cos(alpha_fr) ] ] )
+
+        A_l = np.concatenate( (A_bl * contact_status_bl, A_fl * contact_status_fl), axis = 1 )
+        A_r = np.concatenate( (A_br * contact_status_br, A_fr * contact_status_fr), axis = 1 )
+
+        A = scipy.linalg.block_diag(A_l, A_r)
         
-        rotation_br = ca.horzcat( ca.vertcat( ca.cos(alpha_br), ca.sin(alpha_br) ),\
-                                  ca.vertcat( -ca.sin(alpha_br), ca.cos(alpha_br) ) )
+        Q = np.identity(4) * 1e1
+        R = np.diag( [contact_status_bl, contact_status_bl, contact_status_fl, contact_status_fl,\
+                      contact_status_br, contact_status_br, contact_status_fr, contact_status_fr] )
+        ref = np.array( [2 * fx_ref_l, fz_ref / 2, 2 * fx_ref_r, fz_ref / 2] )
+
+        Ci = np.array( [ [1, -self.niu], [1, self.niu] ] )
+
+        H = 2 * (A.T @ Q @ A + R)
+        g = -2 * A.T @ Q @ ref
+        C = scipy.linalg.block_diag(Ci, Ci, Ci, Ci)
+
+        contact_bl_checker = np.identity(2) * (1 - contact_status_bl)
+        contact_fl_checker = np.identity(2) * (1 - contact_status_fl)
+        contact_br_checker = np.identity(2) * (1 - contact_status_br)
+        contact_fr_checker = np.identity(2) * (1 - contact_status_fr)
+
+        A_skid_steering = np.array( [ [contact_status_bl * contact_status_fl, 0, -contact_status_bl * contact_status_fl, 0, 0, 0, 0, 0],\
+                                      [0, 0, 0, 0, contact_status_br * contact_status_fr, 0, -contact_status_br * contact_status_fr, 0] ] )
         
-        rotation_fr = ca.horzcat( ca.vertcat( ca.cos(alpha_fr), ca.sin(alpha_fr) ),\
-                                  ca.vertcat( -ca.sin(alpha_fr), ca.cos(alpha_fr) ) )
-        
-        #   Vector from robot center of mass to each wheel center (w.r.t to body frame)
-        com2bl_contact = ca.vertcat( com2wheel["com2bl"][0], com2wheel["com2bl"][1], com2wheel["com2bl"][2] - self.wheelRadius )
-        com2fl_contact = ca.vertcat( com2wheel["com2fl"][0], com2wheel["com2fl"][1], com2wheel["com2fl"][2] - self.wheelRadius )
-        com2br_contact = ca.vertcat( com2wheel["com2br"][0], com2wheel["com2br"][1], com2wheel["com2br"][2] - self.wheelRadius )
-        com2fr_contact = ca.vertcat( com2wheel["com2fr"][0], com2wheel["com2fr"][1], com2wheel["com2fr"][2] - self.wheelRadius )
+        A_contact_checker = scipy.linalg.block_diag(contact_bl_checker, contact_fl_checker, contact_br_checker, contact_fr_checker)
 
-        parameters = ca.vertcat( alpha_bl,\
-                                 alpha_fl,\
-                                 alpha_br,\
-                                 alpha_fr,\
-                                 contact_bl,\
-                                 contact_fl,\
-                                 contact_br,\
-                                 contact_fr,\
-                                 fz_ref,\
-                                 fx_ref_l,\
-                                 fx_ref_r )
+        A = np.vstack( ( A_skid_steering, A_contact_checker ) )
+        b = np.array( [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] )
+        idxb = np.array( [1] * 8 )
+        lb = np.array( [-1e4, 0] * 4 )
+        ub = np.array( [1e4, 1e4] * 4 )
+        lg = np.array( [-1e4, 0.0] * 4 )
+        ug = np.array( [0.0, 1e4] * 4 )
 
-        g = ca.vertcat( ca.power(self.fx_l, 2) - ca.power(self.niu * self.fz_bl, 2),\
-                        ca.power(self.fx_l, 2) - ca.power(self.niu * self.fz_fl, 2),\
-                        ca.power(self.fx_r, 2) - ca.power(self.niu * self.fz_br, 2),\
-                        ca.power(self.fx_r, 2) - ca.power(self.niu * self.fz_fr, 2) )
+        #   data
+        self.qp.set('H', H)
+        self.qp.set('g', g)
+        self.qp.set('C', C)
+        self.qp.set('ug', ug)
+        self.qp.set('lg', lg)                 #   arbitrary
+        self.qp.set('A', A)
+        self.qp.set('b', b)
+        self.qp.set('idxb', idxb)
+        self.qp.set('lb', lb)
+        self.qp.set('ub', ub)
 
-        y_bl = ( rotation_bl @ ca.vertcat(self.fx_l, self.fz_bl) - ca.vertcat(fx_ref_l, fz_ref) ) * contact_bl
-        y_fl = ( rotation_fl @ ca.vertcat(self.fx_l, self.fz_fl) - ca.vertcat(fx_ref_l, fz_ref) ) * contact_fl
-        y_br = ( rotation_br @ ca.vertcat(self.fx_r, self.fz_br) - ca.vertcat(fx_ref_r, fz_ref) ) * contact_br
-        y_fr = ( rotation_fr @ ca.vertcat(self.fx_r, self.fz_fr) - ca.vertcat(fx_ref_r, fz_ref) ) * contact_fr
+    def _callSolver(self, state0):
 
-        cost = y_bl.T @ y_bl + y_fl.T @ y_fl + y_br.T @ y_br + y_fr.T @ y_fr
+        self.qp_sol.set('v', np.array(state0) )
 
-        nlp = {'x': ca.vertcat(self.fx_l, self.fx_r, self.fz_wheels), 'f': cost, 'g': g, 'p': parameters}
+        #start_time = time.time()
+        self.solver.solve(self.qp, self.qp_sol)
+        #end_time = time.time()
 
-        self.solver = ca.nlpsol('solver', self.optSolver, nlp, self.optOptions)
+        #print('solve time {:e}'.format(end_time-start_time))
 
-    def _callSolver(self, state, parameters):
-
-        a = time.time()
-
-        res = self.solver(x0 = state, lbx = [-ca.inf, -ca.inf, 0.0, 0.0, 0.0, 0.0], ubx = [ca.inf, ca.inf, ca.inf, ca.inf, ca.inf, ca.inf],\
-                                      lbg = [-ca.inf, -ca.inf, -ca.inf, -ca.inf], ubg = [0.0, 0.0, 0.0, 0.0], p = parameters)
-
-        print(time.time() - a)
-
-        x = res['x']
-
-        return x
+        return self.qp_sol.get('v')
 
 class wheelRateIntegrator(ModelParameters, Common):
 

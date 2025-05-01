@@ -4,7 +4,7 @@
   <env name="GAZEBO_RESOURCE_PATH" value="$GAZEBO_RESOURCE_PATH:$(find nmpc_gazebo)/models" />
 
   <!--  Set mobile robot initial pose -->
-  <arg name = "x" value = "-9.5" />
+  <arg name = "x" value = "-10.0" />
   <arg name = "y" value = "-15.0" />
   <arg name = "z" value = "1.5" />
   <arg name = "roll" value = "0.0" />
@@ -14,7 +14,7 @@
   <!--  Set control type (traction or velocity) -->
   <arg name = "teleoperation_mode" value = "false" />
   <arg name = "traction_ctrl" value = "false" />
-  <arg name = "husky" value = "false" /> <!-- choose robot to load; true: husky | false: pioneer3at -->
+  <arg name = "leo" value = "true" /> <!-- choose robot to load; true: leo rover | false: pioneer3at -->
   
   <!--  Define options  -->
   <arg name = "paused"                     default = "true"/>
@@ -27,8 +27,9 @@
   <arg name = "verbose"                    default = "true"/>
   <arg name = "world"                      default = "$(find nmpc_gazebo)/worlds/moon_dem.world" />
 
-  <arg name = "urdf" value = "$(find nmpc_description)/robots/pioneer3at/urdf/pioneer3at.urdf"/>
-
+  <arg unless="$(arg leo)" name = "urdf" value = "$(find nmpc_description)/robots/pioneer3at/urdf/pioneer3at.urdf"/>
+  <arg if="$(arg leo)" name = "urdf" value = "$(find leo_description)/urdf/leo_sim.urdf.xacro"/>
+  
   <!-- set use_sim_time flag -->
   <group if="$(arg use_sim_time)">
     <param name="/use_sim_time" value="true" />
@@ -46,10 +47,8 @@
   
   <param name = "robot_description" command="$(find xacro)/xacro $(arg urdf)" />
 
-  <rosparam file = "$(find nmpc_bringup)/config/wheel_torque_control.yaml" command = "load"/>
-
   <!-- Load joint controller configurations from YAML file to parameter server -->
-  <!--<group if = "$(arg teleoperation_mode)" >
+  <group if = "$(arg teleoperation_mode)" >
     <rosparam file = "$(find nmpc_bringup)/config/wheel_rate_control.yaml" command = "load"/>
   </group>
   <group unless = "$(arg teleoperation_mode)" >
@@ -59,7 +58,7 @@
     <group unless = "$(arg traction_ctrl)" >
       <rosparam file = "$(find nmpc_bringup)/config/wheel_rate_control.yaml" command = "load"/>
     </group>
-  </group>-->
+  </group>
 
   <!--  spawn robot -->
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" respawn = "false" output="screen"
@@ -77,7 +76,7 @@
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen" />
 
   <!--  start rviz -->
-  <node name="rviz" pkg="rviz" type="rviz" args = "-d $(find nmpc_bringup)/config/pioneer3at.rviz" />
+  <node name="rviz" pkg="rviz" type="rviz" args = "-d $(find nmpc_bringup)/config/leo_rover.rviz" />
   
   <!-- start gazebo server -->
   <node name="gazebo" pkg="gazebo_ros" type="$(arg script_type)" respawn="false" output="screen" args="$(arg command_arg1) $(arg command_arg2) $(arg command_arg3) $(arg world)" />

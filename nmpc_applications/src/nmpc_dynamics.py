@@ -128,7 +128,7 @@ if __name__ == '__main__':
     ###
 
     #   Register signal handler
-    signal_handler = partial(common._signal_handler, node = "[nmpc.py]")
+    signal_handler = partial(common._signal_handler, node = "[nmpc_dynamics.py]")
     signal.signal(signal.SIGINT, signal_handler)
     ###
 
@@ -160,10 +160,10 @@ if __name__ == '__main__':
                     reference = list(path2Follow.reference)
                     initialVelocity = path2Follow.startingVelocity
 
-                    initialPose = np.array( [initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw] )
-                    currentVelocity = np.array( [initialVelocity.linear.x, initialVelocity.linear.y, initialVelocity.angular.z] )
+                    pose0 = np.array( [initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw] )
+                    vel0 = np.array( [initialVelocity.linear.x, initialVelocity.linear.y, initialVelocity.angular.z] )
                     
-                    model._setInitialGuess(10, initialPose, currentVelocity, reference)
+                    model._setInitialGuess(10, pose0, vel0, reference)
 
                     input("[" + rospy.get_name() + "] Wait for input to start simulation cycle.")
                 
@@ -177,10 +177,10 @@ if __name__ == '__main__':
                     reference = list(path2Follow.reference)
                     initialVelocity = path2Follow.startingVelocity
 
-                    initialPose = np.array( [initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw] )
-                    currentVelocity = np.array( [initialVelocity.linear.x, initialVelocity.linear.y, initialVelocity.angular.z] )
+                    pose0 = np.array( [initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw] )
+                    vel0 = np.array( [initialVelocity.linear.x, initialVelocity.linear.y, initialVelocity.angular.z] )
 
-                    controls_next, status = model._solve_sqp(initialPose, currentVelocity, reference)
+                    controls_next, status = model._solve_sqp(pose0, vel0, reference)
 
                 elif( common.nlp_solver_type == 'SQP_RTI' ):
                     model._preparation_sqp_rti()
@@ -194,10 +194,10 @@ if __name__ == '__main__':
                     reference = list(path2Follow.reference)
                     initialVelocity = path2Follow.startingVelocity
 
-                    initialPose = np.array( [initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw] )
-                    currentVelocity = np.array( [initialVelocity.linear.x, initialVelocity.linear.y, initialVelocity.angular.z] )
+                    pose0 = np.array( [initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw] )
+                    vel0 = np.array( [initialVelocity.linear.x, initialVelocity.linear.y, initialVelocity.angular.z] )
 
-                    controls_next, status = model._feedback_sqp_rti(initialPose, currentVelocity, reference)
+                    controls_next, status = model._feedback_sqp_rti(pose0, vel0, reference)
 
                 if( index == 0 ):
                     timeDiff = 0.1

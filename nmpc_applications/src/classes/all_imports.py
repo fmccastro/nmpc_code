@@ -10,7 +10,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, Inertia, Polygon, Point, Pose, Point, Quaternion, Vector3, Wrench, WrenchStamped
 from gazebo_msgs.msg import LinkStates, PerformanceMetrics, ContactState, ContactsState
 from visualization_msgs.msg import Marker, MarkerArray
-from nmpc_bringup.msg import pose3D, velocity3D, pose3DStamped, wheelTrueVelocitiesBodyFrame, referencePath
+from nmpc_bringup.msg import pose3D, velocity3D, pose3DStamped, wheelTrueVelocitiesBodyFrame, referencePath, contactForces
 
 #   Services
 from gazebo_msgs.srv import GetModelProperties, GetWorldProperties, GetLinkProperties, GetPhysicsProperties, ApplyJointEffort, JointRequest
@@ -35,6 +35,10 @@ from functools import partial
 from matplotlib.patches import Ellipse
 from threading import Thread
 from tkinter import *
+
+#   HPIPM (for qp optimization)
+from hpipm_python import *
+from hpipm_python.common import *
 
 from mpl_toolkits.mplot3d import Axes3D
 

@@ -28,6 +28,8 @@ if __name__ == '__main__':
     pub_backRightWheelRate = rospy.Publisher('/back_right_wheel_plant/command', Float64, queue_size = 1)
     pub_frontRightWheelRate = rospy.Publisher('/front_right_wheel_plant/command', Float64, queue_size = 1)
 
+    pub_contactForces = rospy.Publisher('/contactForces', contactForces, queue_size = 1 )
+
     #   Subscribe to ground truth
     rospy.Subscriber( '/gazebo/link_states', LinkStates, common._callback, 0 )                                           #   '/gazebo/link_states' -> topic which collects ground truth
     rospy.Subscriber( '/vehicle/true_pose3D', pose3DStamped, common._callback, 3 )                                       #   '/vehicle/truePose' -> topic which collects robot perfect pose
@@ -83,7 +85,7 @@ if __name__ == '__main__':
     gt_baseLinkIndex, _, _, _, _ = common._getLinksIndex( common.gazeboLinkStates )
 
     """
-        Set constraints
+        Get center of mass to wheels vector
     """
 
     tf_flag = True
@@ -116,7 +118,7 @@ if __name__ == '__main__':
 
     #   Get wheel force correction qp optimization model
     model = WheelTorqueAllocation_qp(com2wheels)
-    
+
     index = 0
 
     ###
@@ -145,21 +147,36 @@ if __name__ == '__main__':
             fx_ref_l = common.backLeftWheelTorque.data
             fx_ref_r = common.backRightWheelTorque.data
 
-            robotWeight = common._3D_rotationMatrix(currentPose).T @ np.array([0, 0, 1]) * common.gz
+            robotWeight = common._3D_rotationMatrix(currentPose).T @ np.array([0, 0, 1]) * common.gz * common.robotMass
+
+            #print("FX ref: ", fx_ref_l, fx_ref_r)
+            #print("Fz ref: ", robotWeight)
+
+            #   Reset contact forces message
+            forces = contactForces()
 
             ###
             angle = []
             if( len(contact_bl.states) > 0 ):
                 for contact in contact_bl.states:
                     if(contact.info == "ON"):
+
+                        list_normal = []
+
                         for normal in contact.contact_normals:
                             normal_body = common._3D_rotationMatrix(currentPose).T @ np.array( [normal.x, normal.y, normal.z] )
 
+                            normal_body = np.array( [ normal_body[0], 0, normal_body[2] ] )
+
+                            list_normal += [ normal_body ]
                             angle += [ math.acos( np.dot( normal_body, np.array( [0, 0, 1] ) ) / np.linalg.norm(normal_body) ) ]
                     
                         if( len(angle) > 0 ):
                             index_bl = angle.index( max(angle) )
                             angle_bl = angle[index_bl]
+
+                            if(list_normal[index_bl][0] > 0):
+                                angle_bl = -angle_bl
 
                             contact_status_bl = 1
                         
@@ -181,14 +198,22 @@ if __name__ == '__main__':
                 for contact in contact_fl.states:
                     if(contact.info == "ON"):
 
+                        list_normal = []
+
                         for normal in contact.contact_normals:
                             normal_body = common._3D_rotationMatrix(currentPose).T @ np.array( [normal.x, normal.y, normal.z] )
 
+                            normal_body = np.array( [ normal_body[0], 0, normal_body[2] ] )
+
+                            list_normal += [normal_body]
                             angle += [ math.acos( np.dot( normal_body, np.array( [0, 0, 1] ) ) / np.linalg.norm(normal_body) ) ]
 
                         if( len(angle) > 0 ):
                             index_fl = angle.index( max(angle) )
                             angle_fl = angle[index_fl]
+
+                            if(list_normal[index_fl][0] > 0):
+                                angle_fl = -angle_fl
 
                             contact_status_fl = 1
                         
@@ -209,14 +234,22 @@ if __name__ == '__main__':
                 for contact in contact_br.states:
                     if(contact.info == "ON"):
 
+                        list_normal = []
+
                         for normal in contact.contact_normals:
                             normal_body = common._3D_rotationMatrix(currentPose).T @ np.array( [normal.x, normal.y, normal.z] )
 
+                            normal_body = np.array( [ normal_body[0], 0, normal_body[2] ] )
+
+                            list_normal += [normal_body]
                             angle += [ math.acos( np.dot( normal_body, np.array( [0, 0, 1] ) ) / np.linalg.norm(normal_body) )]
 
                         if( len(angle) > 0 ):
                             index_br = angle.index( max(angle) )
                             angle_br = angle[index_br]
+
+                            if(list_normal[index_br][0] > 0):
+                                angle_br = -angle_br
 
                             contact_status_br = 1
                         
@@ -239,15 +272,22 @@ if __name__ == '__main__':
                     if(contact.info == "ON"):
                         
                         angle = []
+                        list_normal = []
 
                         for normal in contact.contact_normals:
                             normal_body = common._3D_rotationMatrix(currentPose).T @ np.array( [normal.x, normal.y, normal.z] )
 
+                            normal_body = np.array( [ normal_body[0], 0, normal_body[2] ] )
+
+                            list_normal += [normal_body]
                             angle += [ math.acos( np.dot( normal_body, np.array( [0, 0, 1] ) ) / np.linalg.norm(normal_body) ) ]
 
                         if( len(angle) > 0 ):
                             index_fr = angle.index( max(angle) )
                             angle_fr = angle[index_fr]
+
+                            if(list_normal[index_fr][0] > 0):
+                                angle_fr = -angle_fr
 
                             contact_status_fr = 1
                         
@@ -261,33 +301,42 @@ if __name__ == '__main__':
             else:
                 angle_fr = 0.0
                 contact_status_fr = 0
-            
-            if( contact_status_bl + contact_status_fl + contact_status_br + contact_status_fr > 0 ):
 
-                """print( [fx_ref_l, fx_ref_r] + [-robotWeight[2] / 4] * 4, [angle_bl, angle_fl, angle_br, angle_fr,\
-                                         contact_status_bl, contact_status_fl, contact_status_br, contact_status_fr,\
-                                         -robotWeight[2] / 4, fx_ref_l, fx_ref_r] )"""
+            if( contact_status_bl + contact_status_fl + contact_status_br + contact_status_fr >= 3 or contact_status_bl + contact_status_fr == 2 or contact_status_br + contact_status_fl == 2 ):
+                
+                model._setSolver( [ angle_bl, angle_fl, angle_br, angle_fr,\
+                                    contact_status_bl, contact_status_fl, contact_status_br, contact_status_fr,\
+                                    -robotWeight[2], fx_ref_l, fx_ref_r ] )
 
-                res = model._callSolver( [fx_ref_l, fx_ref_r] + [-robotWeight[2] / 4] * 4, [angle_bl, angle_fl, angle_br, angle_fr,\
-                                         contact_status_bl, contact_status_fl, contact_status_br, contact_status_fr,\
-                                         -robotWeight[2] / 4, fx_ref_l, fx_ref_r])
-            
-                new_fx_l = res[0]
-                new_fx_r = res[1]
+                res = model._callSolver( [fx_ref_l, -robotWeight[2] / 4, fx_ref_l, -robotWeight[2] / 4,\
+                                          fx_ref_r, -robotWeight[2] / 4, fx_ref_r, -robotWeight[2] / 4])
 
-                #print("(Fx_l, Fx_ref_l): ", new_fx_l, fx_ref_l)
-                #print("(Fx_r, Fx_ref_r): ", new_fx_r, fx_ref_r)
+                forces.contactStatus = [contact_status_bl, contact_status_fl, contact_status_br, contact_status_fr]
+                forces.contactAngle = [angle_bl, angle_fl, angle_br, angle_fr]
+                forces.normalForce = res[1::2]
+                forces.tractionForce = res[0::2]
 
-                pub_backLeftWheelRate.publish( common.wheelRadius * new_fx_l )
-                pub_frontLeftWheelRate.publish( common.wheelRadius * new_fx_l )
-                pub_backRightWheelRate.publish( common.wheelRadius * new_fx_r )
-                pub_frontRightWheelRate.publish( common.wheelRadius * new_fx_r )    
+                pub_backLeftWheelRate.publish( common.wheelRadius * res[0] )
+                pub_frontLeftWheelRate.publish( common.wheelRadius * res[2] )
+                pub_backRightWheelRate.publish( common.wheelRadius * res[4] )
+                pub_frontRightWheelRate.publish( common.wheelRadius * res[6] )
+
+                pub_contactForces.publish(forces)  
                 
             else:
-                pub_backLeftWheelRate.publish(0.0)
-                pub_frontLeftWheelRate.publish(0.0)
-                pub_backRightWheelRate.publish(0.0)
-                pub_frontRightWheelRate.publish(0.0)  
+                forces.contactStatus = [-1] * 4
+                forces.contactAngle = [0.0, 0.0, 0.0, 0.0]
+                forces.normalForce = [-robotWeight[2] / 4] * 4
+                forces.tractionForce = [0.0, 0.0, 0.0, 0.0]
+
+                pub_backLeftWheelRate.publish( 0.0 )
+                pub_frontLeftWheelRate.publish( 0.0 )
+                pub_backRightWheelRate.publish( 0.0 )
+                pub_frontRightWheelRate.publish( 0.0 )
+
+                pub_contactForces.publish(forces)
+            
+            #print("Forces: ", forces)
 
             end = time.time()
 

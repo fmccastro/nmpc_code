@@ -115,7 +115,7 @@ if __name__ == '__main__':
             if( common.simulationType == 0 ):
                 kinematicsHorizonPath = list(common.horizonPath.data)
             
-            elif( common.simulationType == 1 ):
+            elif( common.simulationType > 1 ):
                 #kinematicsHorizonPath = list(common.horizonPath.data)
                 dynamicsHorizonPath = list(common.horizonVelocity.data)
             
@@ -136,11 +136,7 @@ if __name__ == '__main__':
                                                                     kinematicsHorizonPath[_index * 6 + 1],\
                                                                     kinematicsHorizonPath[_index * 6 + 2] ) ]
                 
-                elif( common.simulationType == 1 ):
-                    """markerKinematicsHorizonPath.points += [ Point( kinematicsHorizonPath[_index * 12],\
-                                                                    kinematicsHorizonPath[_index * 12 + 1],\
-                                                                    kinematicsHorizonPath[_index * 12 + 2] ) ]"""
-                    
+                elif( common.simulationType > 1 ):
                     markerDynamicsHorizonPath.points += [ Point( dynamicsHorizonPath[_index * 9],\
                                                                  dynamicsHorizonPath[_index * 9 + 1],\
                                                                  dynamicsHorizonPath[_index * 9 + 2] ) ]
@@ -150,8 +146,12 @@ if __name__ == '__main__':
             
             truePosePub.publish( markerTruePoseRobot )
             pub_referencePath.publish(markerReferencePath)
-            #pub_kinHorizonPath.publish(markerKinematicsHorizonPath)
-            pub_dynHorizonPath.publish(markerDynamicsHorizonPath)
+            
+            if( common.simulationType == 0 ):
+                pub_kinHorizonPath.publish(markerKinematicsHorizonPath)
+            
+            elif( common.simulationType >= 1 ):
+                pub_dynHorizonPath.publish(markerDynamicsHorizonPath)
 
             index += 1
 

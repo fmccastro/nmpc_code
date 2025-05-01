@@ -71,7 +71,7 @@ static const casadi_int casadi_s8[11] = {0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 /* kinematics_cost_ext_cost_fun_jac_hess:(i0[6],i1[2],i2[0],i3[3])->(o0,o1[8],o2[8x8,5nz],o3[],o4[0x8]) */
 static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem) {
   casadi_real a0, a1, a10, a11, a2, a3, a4, a5, a6, a7, a8, a9;
-  a0=2.0000000000000001e-01;
+  a0=2.;
   a1=arg[0]? arg[0][0] : 0;
   a2=arg[3]? arg[3][0] : 0;
   a1=(a1-a2);
@@ -83,7 +83,7 @@ static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw,
   a4=(a0*a3);
   a3=(a4*a3);
   a1=(a1+a3);
-  a3=2.;
+  a3=20.;
   a5=arg[0]? arg[0][5] : 0;
   a6=cos(a5);
   a7=arg[3]? arg[3][2] : 0;
@@ -99,7 +99,7 @@ static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw,
   a9=(a10*a9);
   a1=(a1+a9);
   a9=arg[1]? arg[1][0] : 0;
-  a11=(a3*a9);
+  a11=(a0*a9);
   a9=(a11*a9);
   a1=(a1+a9);
   a9=arg[1]? arg[1][1] : 0;
@@ -130,7 +130,6 @@ static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw,
   if (res[1]!=0) res[1][7]=a2;
   a2=4.;
   if (res[2]!=0) res[2][0]=a2;
-  a2=4.0000000000000002e-01;
   if (res[2]!=0) res[2][1]=a2;
   if (res[2]!=0) res[2][2]=a2;
   if (res[2]!=0) res[2][3]=a2;

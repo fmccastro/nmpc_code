@@ -65,7 +65,7 @@ static const casadi_int casadi_s5[9] = {0, 6, 0, 0, 0, 0, 0, 0, 0};
 /* kinematics_cost_ext_cost_e_fun_jac_hess:(i0[6],i1[],i2[],i3[3])->(o0,o1[6],o2[6x6,3nz],o3[],o4[0x6]) */
 static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem) {
   casadi_real a0, a1, a10, a2, a3, a4, a5, a6, a7, a8, a9;
-  a0=2.0000000000000001e-01;
+  a0=2.;
   a1=arg[0]? arg[0][0] : 0;
   a2=arg[3]? arg[3][0] : 0;
   a1=(a1-a2);
@@ -77,7 +77,7 @@ static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw,
   a0=(a0*a3);
   a3=(a0*a3);
   a1=(a1+a3);
-  a3=2.;
+  a3=20.;
   a4=arg[0]? arg[0][5] : 0;
   a5=cos(a4);
   a6=arg[3]? arg[3][2] : 0;
@@ -110,7 +110,7 @@ static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw,
   a8=(a4*a1);
   a2=(a2-a8);
   if (res[1]!=0) res[1][5]=a2;
-  a2=4.0000000000000002e-01;
+  a2=4.;
   if (res[2]!=0) res[2][0]=a2;
   if (res[2]!=0) res[2][1]=a2;
   a2=(a5+a5);

@@ -38,10 +38,6 @@ if __name__ == '__main__':
     pub_horizonVelocity = rospy.Publisher( '/vehicle/nmpc_kinematics/horizonVelocity', Float32MultiArray, queue_size = 1 )
 
     pub_command_vx = rospy.Publisher('/vehicle/nmpc_kinematics/vx', Float32, queue_size = 1)
-    pub_command_vy = rospy.Publisher('/vehicle/nmpc_kinematics/vy', Float32, queue_size = 1)
-    pub_command_vz = rospy.Publisher('/vehicle/nmpc_kinematics/vz', Float32, queue_size = 1)
-    pub_command_wx = rospy.Publisher('/vehicle/nmpc_kinematics/wx', Float32, queue_size = 1)
-    pub_command_wy = rospy.Publisher('/vehicle/nmpc_kinematics/wy', Float32, queue_size = 1)
     pub_command_wz = rospy.Publisher('/vehicle/nmpc_kinematics/wz', Float32, queue_size = 1)
 
     rospy.Subscriber( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame, common._callback, 6 )            #   '/vehicle/trueVelocity_bodyFrame' ->topic which collect robot links perfect velocity
@@ -91,8 +87,36 @@ if __name__ == '__main__':
     gt_baseLinkIndex, _, _, _, _ = common._getLinksIndex( common.gazeboLinkStates )
 
     """
-        Set constraints
+        Get center of mass to wheels vector
     """
+
+    tf_flag = True
+
+    while(tf_flag):
+        try:
+            tfBuffer = tf2_ros.Buffer()
+            listener = tf2_ros.TransformListener(tfBuffer)
+
+            d_bl = tfBuffer.lookup_transform('base_link', 'back_left_hub', rospy.Time(0))
+            d_fl = tfBuffer.lookup_transform('base_link', 'front_left_hub', rospy.Time(0))
+            d_br = tfBuffer.lookup_transform('base_link', 'back_right_hub', rospy.Time(0))
+            d_fr = tfBuffer.lookup_transform('base_link', 'front_right_hub', rospy.Time(0))
+            
+            robotInertia = common._computeCOM(vehicleProperties, get_link_properties, tfBuffer)
+            
+            com2wheels = { 'com2bl': [d_bl.transform.translation.x - robotInertia.com.x, d_bl.transform.translation.y - robotInertia.com.y, d_bl.transform.translation.z - robotInertia.com.z],\
+                           'com2fl': [d_fl.transform.translation.x - robotInertia.com.x, d_fl.transform.translation.y - robotInertia.com.y, d_fl.transform.translation.z - robotInertia.com.z],\
+                           'com2br': [d_br.transform.translation.x - robotInertia.com.x, d_br.transform.translation.y - robotInertia.com.y, d_br.transform.translation.z - robotInertia.com.z],\
+                           'com2fr': [d_fr.transform.translation.x - robotInertia.com.x, d_fr.transform.translation.y - robotInertia.com.y, d_fr.transform.translation.z - robotInertia.com.z] }
+            
+            #   Save com2wheels to file
+            with open( common.results_folder + "com2wheels_" + common.robot + '.pickle', 'wb') as handle:
+                pickle.dump(com2wheels, handle, protocol = pickle.HIGHEST_PROTOCOL)
+
+            tf_flag = False
+            
+        except(tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            print( "[" + rospy.get_name() + "] COM and MoI were not computed." )
 
     #   Path tracking
     model = Kinematics()
@@ -164,20 +188,15 @@ if __name__ == '__main__':
                 horizonPath.data = solutionX
                 horizonVelocity.data = solutionU + solutionU[-2:]
 
-                if( common.simulationType == 0 ):
-                    next_wr, next_wl = common._cmdVelocity2JointVelocity(next_vx, next_wz)
+                next_wr, next_wl = common._cmdVelocity2JointVelocity(next_vx, next_wz)
 
-                    pub_backLeftWheelRate.publish(next_wl)
-                    pub_frontLeftWheelRate.publish(next_wl)
-                    pub_backRightWheelRate.publish(next_wr)
-                    pub_frontRightWheelRate.publish(next_wr)
+                pub_backLeftWheelRate.publish(next_wl)
+                pub_frontLeftWheelRate.publish(next_wl)
+                pub_backRightWheelRate.publish(next_wr)
+                pub_frontRightWheelRate.publish(next_wr)
 
                 pub_command_vx.publish(solutionU[0])
-                pub_command_vy.publish(solutionU[1])
-                pub_command_vz.publish(solutionU[2])
-                pub_command_wx.publish(solutionU[3])
-                pub_command_wy.publish(solutionU[4])
-                pub_command_wz.publish(solutionU[5])
+                pub_command_wz.publish(solutionU[1])
 
                 pub_horizonPath.publish(horizonPath)
                 pub_horizonVelocity.publish(horizonVelocity)

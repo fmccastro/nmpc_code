@@ -75,21 +75,23 @@ namespace gazebo
       contact2Pub.contact_normals.clear();
       contact2Pub.contact_positions.clear();
 
+      //std::cout << nbContacts << "\n";
+
       if( nbContacts > 0 )
       {
-        int size = contacts.contact(0).position_size();
+        int size = contacts.contact(nbContacts - 1).position_size();
 
         for (unsigned int j = 0; j < size; ++j)
         {
           //  Get contact position
-          this->position.x = contacts.contact(0).position(j).x();
-          this->position.y = contacts.contact(0).position(j).y();
-          this->position.z = contacts.contact(0).position(j).z();
+          this->position.x = contacts.contact(nbContacts - 1).position(j).x();
+          this->position.y = contacts.contact(nbContacts - 1).position(j).y();
+          this->position.z = contacts.contact(nbContacts - 1).position(j).z();
 
           //  Get contact normal
-          this->normal.x = contacts.contact(0).normal(j).x();
-          this->normal.y = contacts.contact(0).normal(j).y();
-          this->normal.z = contacts.contact(0).normal(j).z();
+          this->normal.x = contacts.contact(nbContacts - 1).normal(j).x();
+          this->normal.y = contacts.contact(nbContacts - 1).normal(j).y();
+          this->normal.z = contacts.contact(nbContacts - 1).normal(j).z();
 
           contact2Pub.info = "ON";
           contact2Pub.contact_positions.push_back(this->position);

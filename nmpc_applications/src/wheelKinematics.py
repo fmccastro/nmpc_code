@@ -80,21 +80,71 @@ if __name__ == '__main__':
 
     rospy.init_node('wheelKinematics', anonymous = True)
 
-    #   Load vectors from com to each wheel center
-    with open( common.results_folder + "com2wheels_" + common.robot + '.pickle', 'rb') as handle:
-        com2wheels = pickle.load(handle)
-
     rospy.Subscriber( '/gazebo/link_states', LinkStates, common._callback, 0 )                             #   '/gazebo/link_states' -> topic which collects perfect sensors data
     rospy.wait_for_message( '/gazebo/link_states', LinkStates )
 
     pub_true_velocity_bodyFrame = rospy.Publisher( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame, queue_size = 1 )                   #   '/vehicle/true_velocity_bodyFrame' -> topic for true velocity
+
+    #   Services
+    rospy.wait_for_service( '/gazebo/get_world_properties' )
+    rospy.wait_for_service( '/gazebo/get_model_properties' )
+    rospy.wait_for_service( '/gazebo/get_link_properties' )
+    rospy.wait_for_service( '/gazebo/get_physics_properties' )
+    rospy.wait_for_service( '/controller_manager/list_controllers' )
+    rospy.wait_for_service( '/controller_manager/unload_controller' )
+    rospy.wait_for_service( '/controller_manager/switch_controller' )
+
+    get_world_properties = rospy.ServiceProxy( '/gazebo/get_world_properties', GetWorldProperties )
+    get_model_properties = rospy.ServiceProxy( '/gazebo/get_model_properties', GetModelProperties )
+    get_link_properties = rospy.ServiceProxy( '/gazebo/get_link_properties', GetLinkProperties )
+    get_physics_properties = rospy.ServiceProxy( '/gazebo/get_physics_properties', GetPhysicsProperties )
+    list_controllers = rospy.ServiceProxy('/controller_manager/list_controllers', ListControllers)
+    unload_controller = rospy.ServiceProxy('/controller_manager/unload_controller', UnloadController)
+    switch_controller = rospy.ServiceProxy('/controller_manager/switch_controller', SwitchController)
 
     ###
 
     true_velocity_bodyFrame = wheelTrueVelocitiesBodyFrame()
     true_velocity_bodyFrame.wheel = ["base_link", "back_left_wheel", "front_left_wheel", "back_right_wheel", "front_right_wheel"]
 
-    baseLinkIndex, backLeftIndex, frontLeftIndex, backRightIndex, frontRightIndex = common._getLinksIndex( common.gazeboLinkStates )
+    ###
+    worldProperties = get_world_properties()
+
+    vehicleProperties = common._getVehicleProperties( worldProperties, get_model_properties )
+
+    vehicleMass = common._getVehicleMass( vehicleProperties, get_link_properties )
+
+    physicsProperties = get_physics_properties()
+
+    baseLinkIndex, _, _, _, _ = common._getLinksIndex( common.gazeboLinkStates )
+
+    """
+        Get center of mass to wheels vector
+    """
+
+    tf_flag = True
+
+    while(tf_flag):
+        try:
+            tfBuffer = tf2_ros.Buffer()
+            listener = tf2_ros.TransformListener(tfBuffer)
+
+            d_bl = tfBuffer.lookup_transform('base_link', 'back_left_hub', rospy.Time(0))
+            d_fl = tfBuffer.lookup_transform('base_link', 'front_left_hub', rospy.Time(0))
+            d_br = tfBuffer.lookup_transform('base_link', 'back_right_hub', rospy.Time(0))
+            d_fr = tfBuffer.lookup_transform('base_link', 'front_right_hub', rospy.Time(0))
+            
+            robotInertia = common._computeCOM(vehicleProperties, get_link_properties, tfBuffer)
+            
+            com2wheels = { 'com2bl': [d_bl.transform.translation.x - robotInertia.com.x, d_bl.transform.translation.y - robotInertia.com.y, d_bl.transform.translation.z - robotInertia.com.z],\
+                           'com2fl': [d_fl.transform.translation.x - robotInertia.com.x, d_fl.transform.translation.y - robotInertia.com.y, d_fl.transform.translation.z - robotInertia.com.z],\
+                           'com2br': [d_br.transform.translation.x - robotInertia.com.x, d_br.transform.translation.y - robotInertia.com.y, d_br.transform.translation.z - robotInertia.com.z],\
+                           'com2fr': [d_fr.transform.translation.x - robotInertia.com.x, d_fr.transform.translation.y - robotInertia.com.y, d_fr.transform.translation.z - robotInertia.com.z] }
+
+            tf_flag = False
+            
+        except(tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            print( "[" + rospy.get_name() + "] COM and MoI were not computed." )
 
     print("[wheelKinematics.py] Simulation cycle is running!")
 

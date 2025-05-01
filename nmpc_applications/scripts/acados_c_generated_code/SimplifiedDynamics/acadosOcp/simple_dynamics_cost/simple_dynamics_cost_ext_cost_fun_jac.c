@@ -92,12 +92,12 @@ static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw,
   a3=(a3*a8);
   a8=(a3*a8);
   a1=(a1+a8);
-  a8=20.;
+  a8=2.;
   a9=arg[0]? arg[0][6] : 0;
   a10=(a8*a9);
   a9=(a10*a9);
   a1=(a1+a9);
-  a9=1000.;
+  a9=200.;
   a11=arg[0]? arg[0][7] : 0;
   a9=(a9*a11);
   a11=(a9*a11);

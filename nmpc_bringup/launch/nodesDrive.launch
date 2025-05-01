@@ -1,8 +1,6 @@
 <?xml version="1.0" ?>
 <launch>
-
   <node name = "wheelKinematics" pkg = "nmpc_applications" type = "wheelKinematics.py" output = "screen" />
   <node name = "poseConverter" pkg = "nmpc_applications" type = "poseConverter.py" output = "screen" />
   <node name = "record_data" pkg = "nmpc_applications" type = "record_data.py" output = "screen" />
-  
 </launch>
