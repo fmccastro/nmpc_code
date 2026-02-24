@@ -1,91 +1,33 @@
 #!/usr/bin/python3.8
 
 import sys
-sys.path.insert(0, "/media/fmccastro/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/src")
+sys.path.insert(0, "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/src")
 
 from classes.all_imports import *
 
-"""
+""" 
     Note (this is the typical order):   bl = back left wheel
                                         fl = front left wheel
                                         br = back right wheel
                                         fr = front right wheel
-"""
+""" 
 
 class Common:
-
-    """                                                     
-        Reference Pose: 0 -> true pose (from Gazebo)
-                        1 -> fused pose (from noisy sensors) from robot_localization package
-    """
-    poseType = 0
-    
-    """
-        Robot parameters
-    """
-    nbWheels = 4
 
     robot = "leo"
 
     if( robot == "leo" ):
-        #   Leo rover parameters
-        wheelLatSeparation = 0.448
-        wheelLonSeparation = 0.305
-        wheelRadius = 0.065
-        robotLength = 0.435
-        """wheelWidth = 0.05
-        robotWidth = 0.67
-        robotLength = 0.988
-        robotHeight = 0.388
-        robotContactArea = robotWidth * wheelLonSeparation"""
-        
-        robotMass = 5.495478
-
-        ixx = 9.750858276455656
-        ixy = -0.015058500000000002
-        ixz = -0.012606628898103725
-
-        iyy = 10.858470047780516
-        iyz = -0.015058499999999999
-        
-        izz = 11.808587634684864
-
-        i_wheel = 0.0004716
-
+        vehicle_specs = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/config/leo_rover.json"
+    
     elif( robot == "pioneer3at" ):
         #   Pioneer 3AT parameters
-        wheelRadius = 0.111
-        wheelLonSeparation = 0.268
-        wheelLatSeparation = 0.394
-        robotLength = 0.508
-        """wheelWidth = 0.04
-        robotWidth = 0.497
-        robotHeight = 0.277
-        robotContactArea = robotWidth * wheelLonSeparation"""
-
-        robotMass = 27.4
-
-        ixx = 11.617014975544746
-        ixy = 0.0
-        #ixz = 0.00013954988745109795
-        ixz = 0.0
-
-        iyy = 11.669791786280525
-        iyz = 0.0
-        
-        izz = 11.700973610735778
-
-        #   Wheel joint inertia (experimental value)
-        i_wheel = 0.015
-        mass_wheel = 1.2
-
-    """                 
-        0 -> path-tracking (kinematics)
-        1 -> path-tracking (dynamics)
-        2 -> add terrain correction
-        3 -> add parameter estimation
-    """
-    simulationType = 0
+        vehicle_specs = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/config/pioneer3at.json"
+    
+    elif(robot == "steering_rover"):
+        vehicle_specs = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/config/steering_rover.json"
+    
+    elif(robot == "lamborghini"):
+        vehicle_specs = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/config/lamborghini.json"
 
     """
         Convex inner approximation iteration parameters
@@ -97,45 +39,28 @@ class Common:
 
     """
         Algorithm parameters
-    """
-    Ts = 0.10                                                           #   Sampling Time
-    fixedTs = True                                                      #   Variable sampling time
-    N = 50                                                              #   Control horizon
-    maxCycles = 10                                                      #   Maximum number of cycles for look ahead point finder
-    intAccuracy = 4                                                     #   Runge-kutta integrator accuracy
-    
-    NbPosition = 3                                                      #   Number of position variables
-    NbOrientation = 3                                                   #   Number of orientation variables
-
-    NbLinVelocity = 3                                                   #   Number of linear velocity variables
-    NbAngVelocity = 3                                                   #   Number of angular velocity variables
-
-    NbStates = 6                                                        #   Number of states
-    NbControls = 2                                                      #   Number of Controls
-    infinite = math.pow(10, 3)                                          #   High value
-
+    """ 
     gz = -9.81                                                          #   Gravity
-    niu = 1.0                                                           #   General component of friction
     corFactor = 0.732166                                                #   Correction factor
-    niu_c = niu * corFactor
-    joint_friction = 0.1
 
     """     Elevation grids and cost maps folders   """
     
     #   Results folder
-    results_folder = "/media/fmccastro/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/Resultados/"
+    results_folder = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/Resultados/"
     
     #   Raw digital elevation model data
-    mapFile = "/media/fmccastro/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_gazebo/models/marsyard2021_terrain/dem/marsyard_terrain_hm.tif"
-    
+    mapFile = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_gazebo/models/marsyard2021_terrain/dem/marsyard_terrain_hm.tif"
+    #mapFile = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_gazebo/models/marsyard2020_terrain/marsyard2020_terrain.png"
+    #mapFile = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_gazebo/models/marsyard2022_terrain/dem/marsyard2022_terrain_hm.tif"
+
     #   Directory where all elevation grids and traversability maps are saved with .npy format
-    mapFolderDir = "/media/fmccastro/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/Resultados/costmaps/"
+    mapFolderDir = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/Resultados/costmaps/"
 
     #   Directory where data is exported for publication
-    exportData2PubDir = "/media/fmccastro/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/mscthesis/mscthesis_pdf/Data/"
+    exportData2PubDir = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/mscthesis/mscthesis_pdf/Data/"
 
     #   Directory where plots are exported for publication
-    exportPlot2PubDir = "/media/fmccastro/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/mscthesis/mscthesis_pdf/Figures/"
+    exportPlot2PubDir = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/mscthesis/mscthesis_pdf/Figures/"
     
     #   Folder to save maps for each environment
     mapFolder = 1                                                       #   1 -> mars yard 2021
@@ -148,132 +73,38 @@ class Common:
         mapDimy = 47.0                                                      #   Square Map dimension y direction
         mapHeight = 6.57519871597                                           #   Map maximum height
         maxSpeed = 1.0                                                      #   Maximum speed (minimum cost)
-        
-    """ Robot's admissible space set """
     
-    #   p = [x, y, z]
-    z_min = -5.0  
-    z_max = 10.0
+    """ .json files with weights and constraint limits """
 
-    p_lb = [ -mapDimx/2.0, -mapDimy/2.0, z_min ]
-    p_ub = [ mapDimx/2.0, mapDimy/2.0, z_max ]
+    #   Integrator for verification purposes
+    dynamics_integrator = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/config/DynamicsIntegrator.json"
+
+    #   Standard formulation kinematics
+    std_kin_skid = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/config/mpc_kin_std_skid_steering.json"
+
+    #   Standard formulation dynamics
+    std_dyn_skid = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/config/mpc_dyn_std_skid_steering.json"
     
-    """ Limits on the Robot's Controls """
-    
-    #   Kinematics control bounds
-    vx_lb = -0.5
-    vx_ub = 0.5
+    #   Baseline standard formulation kinematics
+    baseline_std_kin_skid = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/config/mpc_kin_baseline_std_skid_steering.json"
 
-    wz_lb = -120 * math.pi / 180.0
-    wz_ub = 120 * math.pi / 180.0
+    #   Baseline standard formulation dynamics
+    baseline_std_dyn_skid = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/config/mpc_dyn_baseline_std_skid_steering.json"
 
-    #   Trajectory bounds
-    v_lb = [ -100.0, -1000.0, -1000.0 ]
-    v_ub = [ 100.0, 1000.0, 1000.0 ]
+    #   Frenet-Serret frame formulation kinematics
+    frenet_serret_kin_skid = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/config/mpcc_kin_skidsteering_frenet.json"
 
-    #   w = (wx, wy, wz) :m/s
-    w_lb = [ -1000.0, -1000.0, -380 * math.pi / 180.0 ] 
-    w_ub = [ 1000.0, 1000.0, 380 * math.pi / 180.0 ] 
+    #   Frenet-Serret frame formulation dynamics
+    frenet_serret_dyn_skid = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/config/mpcc_dyn_skidsteering_frenet.json"
 
-    #   wheel rate (state) = (w_bl, w_fl, w_br, w_fr) :rad/s
-    wheel_lb = [-100.0, -100.0, -100.0, -100.0]
-    wheel_ub = [100.0, 100.0, 100.0, 100.0]
+    #   CIAO parameters
+    ciao_parameters = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/config/ciao_parameters.json"
 
-    #   velocity derivative (control)
-    v_dot_lb = [-10, -10, -10]
-    w_dot_lb = [-10, -10, -10]
+    #   Obstacles
+    list_obstacles = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/config/obstacles.json"
 
-    v_dot_ub = [10, 10, 10]
-    w_dot_ub = [10, 10, 10]
-
-    #   wheel rate (control) : rad/s
-    wheel_rate_lb = [-10.0, -10.0]
-    wheel_rate_ub = [10.0, 10.0]
-
-    #   forces limits: N
-    f_lb = [-1000.0, -1000, 0]
-    f_ub = [1000, 1000, 1000]
-
-    #   moments limits: Nm
-    m_lb = [-1000, -1000, -1000]
-    m_ub = [1000, 1000, 1000]
-
-    #   wheel lateral forces limits
-    fy_lb = [-999999.0, -999999.0, -999999.0, -999999.0]
-    fy_ub = [999999.0, 999999.0, 999999.0, 999999.0]
-
-    #   wheel normal forces limits
-    fn_lb = [0.0, 0.0, 0.0, 0.0]
-    fn_ub = [999999.0, 999999.0, 999999.0, 999999.0]
-
-    #   torque limits
-    torque_lb = [-10.0, -10.0]
-    torque_ub = [10.0, 10.0]
-
-    """ Time constraints """
-    dt_min = 0.001                                                      #   Minimum time
-    dt_max = 0.5                                                        #   Maximum time
-
-    """ Penalty Matrices """
-    
-    #   Kinematics costs    ##################
-    Q_p_kin = 2 * np.diag( [ 1e0, 1e0, 0e0 ] )                                  
-    Q_o_kin = 2 * np.diag( [ 0e0, 0e0, 1e1 ] )  
-
-    Q_vx_kin = 2 * 1e0
-    Q_wz_kin = 2 * 1e0
-
-    Q_p_kin_t = 2 * np.diag( [ 1e0, 1e0, 0e0 ] )                                  
-    Q_o_kin_t = 2 * np.diag( [ 0e0, 0e0, 1e1 ] )  
-
-    Q_vx_kin_t = 2 * 1e0                           
-    Q_wz_kin_t = 2 * 1e0
-    ##########################################
-
-    #   Simplified dynamics costs   ##########
-    Q_p_simple_dyn = 2 * np.diag( [ 5e0, 5e0, 1e-2] )
-    Q_o_simple_dyn = 2 * np.diag( [ 1e-2, 1e-2, 5e1 ] )  
-
-    Q_vx_simple_dyn = 2 * 1e0
-    Q_vy_simple_dyn = 2 * 1e2
-    Q_wz_simple_dyn = 2 * 1e0
-
-    Q_p_simple_dyn_t = 2 * np.diag( [ 5e0, 5e0, 1e-2 ] )                                  
-    Q_o_simple_dyn_t = 2 * np.diag( [ 1e-2, 1e-2, 5e1 ] )  
-
-    Q_vx_simple_dyn_t = 2 * 1e0
-    Q_vy_simple_dyn_t = 2 * 1e2
-    Q_wz_simple_dyn_t = 2 * 1e0
-
-    Q_f_simple_dyn = 2 * np.diag( [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3] )
-
-    Q_icr = 2 * np.diag( [1e-2, 1e-2, 1e-2] )
-
-    Q_m_dyn = 2 * np.diag( [1e2, 1e2] )
-    ##########################################
-
-    #   Dynamics costs     ######
-    Q_p_dyn = 2 * np.diag( [ 3e0, 3e0, 1e-2] )
-    Q_o_dyn = 2 * np.diag( [ 1e-2, 1e-2, 1e2 ] )  
-
-    Q_v_dyn = 2 * np.diag( [ 1e0, 1e2, 1e2 ] )                                 
-    Q_w_dyn = 2 * np.diag( [ 1e-2, 1e-2, 1e0 ] )
-
-    Q_p_dyn_t = 2 * np.diag( [ 3e0, 3e0, 1e-2 ] )                                  
-    Q_o_dyn_t = 2 * np.diag( [ 1e-2, 1e-2, 1e2 ] )  
-
-    Q_v_dyn_t = 2 * np.diag( [ 1e0, 1e2, 1e2 ] )                                   
-    Q_w_dyn_t = 2 * np.diag( [ 1e-2, 1e-2, 1e0 ] )    
-
-    Q_f_dyn = 2 * np.diag( [1e0, 1e0, 1e-2, 1e-2, 1e-2, 1e-2] )
-
-    Q_icr = 2 * np.diag( [1e-2, 1e-2, 1e-2] )
-
-    Q_m_dyn = 2 * np.diag( [1e-2, 1e-2] )
-    ##########################################  
-
-    #   SQP or SQP_RTI
-    nlp_solver_type = 'SQP_RTI'                                                                  
+    #   Potential field
+    potential_field = "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/ROS_workspaces/thesis_ws/src/nmpc_applications/config/potential_field_parameters.json"
 
     """ Cost Function choice """
     costFunction = 0                                                    #   choose cost function
@@ -299,7 +130,7 @@ class Common:
                        'calc_f': False,
                        'calc_g': False }
     
-        #dump_dir: "/media/fmccastro/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/Resultados/HeightMinimization"
+        #dump_dir: "/media/francisco/My_Passport/Universidade/IST_repositorio_pessoal/5_ano_2_sem/Tese_RoverNavigation_root/Tese_RoverNavigation/Resultados/HeightMinimization"
     
     elif(optSolver == 'qrsqp' or optSolver == 'sqpmethod'):
     
@@ -328,10 +159,10 @@ class Common:
     option3 = "Points"
 
     """ Goal position (x, y)    """
-    goalPoint = [20.0, 20.0]                                       
+    goalPoint = [14.0, 12.0]                                     
 
     """ Goal check """
-    goalCheck = robotLength / 2.0                                       
+    goalCheck = 1.0                                  
 
     def __init__( self ):
 
@@ -460,6 +291,10 @@ class Common:
         #   Wheel contact forces
         elif( option == 32 ):
             self.wheelForces = msg
+        
+        #   Robot inertia
+        elif( option == 33 ):
+            self.inertia = msg
     
     def _wheelLoad(self, msg, option):
 
@@ -497,6 +332,28 @@ class Common:
         elif( option == 3 ):
             self.rate_fr = msg
 
+    def _linkWrenchCallback(self, msg, option):
+
+        #   Base link
+        if( option == 0 ):
+            self.base_link_wrench = msg
+        
+        #   Back left wheel
+        elif( option == 1 ):
+            self.back_left_wrench = msg
+
+        #   Front left wheel
+        elif( option == 2 ):
+            self.front_left_wrench = msg
+
+        #   Back right wheel
+        elif( option == 3 ):
+            self.back_right_wrench = msg
+
+        #   Front right wheel
+        elif( option == 4 ):
+            self.front_right_wrench = msg
+
     def _multiArrayCallback(self, msg, option):
 
         #   List concatenation of [x, y, z, roll, pitch, yaw]
@@ -514,6 +371,14 @@ class Common:
         #   List concatenation of [fx, mz]
         elif(option == 3):
             self.horizonForcesMoments = msg
+        
+        #   List concatenation of contact status [bl, fl, br, fr]
+        elif( option == 4 ):
+            self.contactStatus = msg
+        
+        #   List concatenation of contact angles [bl, fl, br, fr]
+        elif( option == 5 ):
+            self.contactAngles = msg
         
     def _wheelTorqueInputCallback( self, msg, option ):
 
@@ -578,6 +443,10 @@ class Common:
 
     def _computeCOM( self, vehicleProperties, vehiclePropertiesService, buffer ):
 
+        """
+            Update robot center of mass and inertia tensor
+        """
+
         vehicleMass = 0
         
         sum_x = 0
@@ -588,12 +457,17 @@ class Common:
             linkProperties = vehiclePropertiesService( link )
             vehicleMass += linkProperties.mass
 
-            trans = buffer.lookup_transform("base_link", link, rospy.Time())
+            trans = buffer.lookup_transform("base_link", link, rospy.Time(), rospy.Duration(5))
+
+            rotation_matrix = R.from_quat( [trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w] )
+
+            com_position = rotation_matrix.as_matrix().T @ np.array( [linkProperties.com.position.x, linkProperties.com.position.y, linkProperties.com.position.z] )
         
-            sum_x += linkProperties.mass * (linkProperties.com.position.x + trans.transform.translation.x)
-            sum_y += linkProperties.mass * (linkProperties.com.position.y + trans.transform.translation.y)
-            sum_z += linkProperties.mass * (linkProperties.com.position.z + trans.transform.translation.z)
+            sum_x += linkProperties.mass * (com_position[0] + trans.transform.translation.x)
+            sum_y += linkProperties.mass * (com_position[1] + trans.transform.translation.y)
+            sum_z += linkProperties.mass * (com_position[2] + trans.transform.translation.z)
         
+        #   Compute center of mass
         com_x = sum_x / vehicleMass
         com_y = sum_y / vehicleMass
         com_z = sum_z / vehicleMass
@@ -608,19 +482,23 @@ class Common:
         for link in vehicleProperties.body_names:
             linkProperties = vehiclePropertiesService( link )
 
-            trans = buffer.lookup_transform("base_link", link, rospy.Time())
+            trans = buffer.lookup_transform("base_link", link, rospy.Time(), rospy.Duration(5))
 
-            r_x = com_x - (linkProperties.com.position.x + trans.transform.translation.x)
-            r_y = com_y - (linkProperties.com.position.y + trans.transform.translation.y)
-            r_z = com_z - (linkProperties.com.position.z + trans.transform.translation.z)
+            rotation_matrix = R.from_quat( [trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w] )
+            
+            com_position = rotation_matrix.as_matrix().T @ np.array( [linkProperties.com.position.x, linkProperties.com.position.y, linkProperties.com.position.z] )
+
+            r_x = com_x - (com_position[0] + trans.transform.translation.x)
+            r_y = com_y - (com_position[1] + trans.transform.translation.y)
+            r_z = com_z - (com_position[2] + trans.transform.translation.z)
 
             #   Parallel axis theorem
             robotInertia.ixx += linkProperties.ixx + linkProperties.mass * ( math.pow(r_y, 2) + math.pow(r_z, 2) )
             robotInertia.iyy += linkProperties.iyy + linkProperties.mass * ( math.pow(r_z, 2) + math.pow(r_x, 2) )
             robotInertia.izz += linkProperties.izz + linkProperties.mass * ( math.pow(r_x, 2) + math.pow(r_y, 2) )
             robotInertia.ixy += linkProperties.ixy - linkProperties.mass * r_x * r_y
-            robotInertia.iyz += linkProperties.ixy - linkProperties.mass * r_y * r_z
-            robotInertia.ixz += linkProperties.ixy - linkProperties.mass * r_x * r_z
+            robotInertia.iyz += linkProperties.iyz - linkProperties.mass * r_y * r_z
+            robotInertia.ixz += linkProperties.ixz - linkProperties.mass * r_x * r_z
 
         return robotInertia
     
@@ -649,9 +527,6 @@ class Common:
         linkIndex = 0
 
         for link in links.name:
-
-            print(link.split( "::", 1 )[1])
-            
             if( "base_link" in link ):
                 baseLinkIndex = linkIndex
                 
@@ -668,7 +543,7 @@ class Common:
                 frontRightIndex = linkIndex
 
             linkIndex += 1
-        
+
         return baseLinkIndex, backLeftIndex, frontLeftIndex, backRightIndex, frontRightIndex
     
     def _getJointStatesIndex( self, jointStates ):
@@ -699,8 +574,6 @@ class Common:
 
         for wheel in wheelVelocities.wheel:
 
-            print("Wheel: ", wheel)
-
             if( wheel == "base_link" ):
                 baseLinkIndex = index
             
@@ -717,19 +590,49 @@ class Common:
                 frontRightWheelIndex = index
 
             index += 1
-    
+
         return baseLinkIndex, backLeftWheelIndex, frontLeftWheelIndex, backRightWheelIndex, frontRightWheelIndex
 
-    def _cmdVelocity2JointVelocity(self, vx_cmd, wz_cmd):
+    def _cmdVelocity2JointVelocity(self, vx_cmd, wz_cmd, rocker_l_angle = 0, rocker_r_angle = 0 ):
         
-        v_r = vx_cmd + wz_cmd * self.wheelLatSeparation / 2
-        v_l = vx_cmd - wz_cmd * self.wheelLatSeparation / 2
+        if( self.robot == "pioneer3at" ):
+            res = np.array( [ [ 1 / ( self.wheelRadius ), self.wheelLatSeparation / ( 2 * self.wheelRadius ) ],\
+                              [ 1 / ( self.wheelRadius ), -self.wheelLatSeparation / ( 2 * self.wheelRadius ) ] ] ) @ np.array( [ vx_cmd, wz_cmd ] )
+        
+        elif( self.robot == "leo" ):
+            res = np.array( [ [ 1 / ( math.cos(rocker_r_angle) * self.wheelRadius ), self.wheelLatSeparation / ( 2 * self.wheelRadius * math.cos(rocker_r_angle) ) ],\
+                              [ 1 / ( math.cos(rocker_l_angle) * self.wheelRadius ), -self.wheelLatSeparation / ( 2 * self.wheelRadius * math.cos(rocker_l_angle) ) ] ] ) @ np.array( [ vx_cmd, wz_cmd ] )
 
-        w_r_y = v_r / self.wheelRadius
-        w_l_y = v_l / self.wheelRadius
+        w_r_y = res[0]
+        w_l_y = res[1]
 
         return w_r_y, w_l_y
     
+    def _fixAngle(self, vx, vy, angle):
+
+        if( vx > 0 and vy > 0 ):
+            pass
+        
+        elif( vx > 0 and vy < 0 ):
+            angle = -angle
+        
+        elif( vx < 0 and vy > 0 ):
+            angle = -(math.pi - angle)
+        
+        elif( vx < 0 and vy < 0 ):
+            angle = math.pi - angle
+
+        return angle
+
+    def _ackermanSteering(self, delta_cmd):
+
+        R = self.wheelLonSeparation / (2 * math.tan(delta_cmd) )
+
+        delta_fl = math.atan( self.wheelLonSeparation / (2 * (R - self.wheelLatSeparation / 2) ) )
+        delta_fr = math.atan( self.wheelLonSeparation / (2 * (R + self.wheelLatSeparation / 2) ) )
+
+        return delta_fl, delta_fr
+
     def xyz_rotationMatrix(self, roll, pitch, yaw):
 
         """
@@ -756,7 +659,7 @@ class Common:
 
     def _euler2Quat(self, sequence):
 
-        """
+        """ 
             Roll pitch yaw to quaternion conversion (roll-pitch-yaw convention)
 
             :sequence [roll, pitch, yaw]
@@ -802,3 +705,17 @@ class Common:
 
         print(node + ': CTRL-C was pressed. Node is shutdown.')
         sys.exit(0)
+
+    def skew(self, vector):
+        """
+        this function returns a numpy array with the skew symmetric cross product matrix for vector.
+        the skew symmetric cross product matrix is defined such that
+        np.cross(a, b) = np.dot(skew(a), b)
+
+        :param vector: An array like vector to create the skew symmetric cross product matrix for
+        :return: A numpy array of the skew symmetric cross product vector
+        """
+
+        return np.array( [ [0, -vector[2], vector[1] ], 
+                           [vector[2], 0, -vector[0] ], 
+                           [-vector[1], vector[0], 0 ] ] )

@@ -1,0 +1,308 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <xacro:property name="velocity" value="false"/>
+
+    <xacro:macro name="base_link_xacro" params="mass l w h">
+        <link name="base_link">
+            <inertial>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <mass value="${mass}"/>
+                <inertia ixx="${(1/12.0)*mass*(w * w + h * h)}" ixy="0.0" ixz="0.0" 
+                        iyy="${(1/12.0)*mass*(l * l + h * h)}" iyz="0.0" 
+                        izz="${(1/12.0)*mass*(w * w + l * l)}"/>
+            </inertial>
+            <visual>
+                <geometry>
+                    <box size="${l} ${w} ${h}"/>
+                </geometry>
+            </visual>
+            <!--<collision>
+                <geometry>
+                    <box size="${l} ${w} ${h}"/>
+                </geometry>
+            </collision>-->
+        </link>
+        <gazebo reference="base_link">
+            <gravity>true</gravity>
+            <material>Gazebo/Red</material>
+        </gazebo>
+    </xacro:macro>
+
+    <xacro:macro name="wheel_steering" params="name mass l w h">
+        <link name="${name}">
+            <inertial>
+                <mass value="${mass}"/>
+                <inertia ixx="${(1/12.0) * mass * (w*w + h*h)}" ixy="0.0" ixz="0.0" 
+                        iyy="${(1/12.0) * mass * (l*l + h*h)}" iyz="0.0"
+                        izz="${(1/2.0) * mass * (l*l + w*w)}"/>
+            </inertial>
+            <visual>
+                <geometry>
+                    <box size="${l} ${w} ${h}"/>
+                </geometry>
+            </visual>
+            <material name="Cyan">
+                <color rgba="0 1.0 1.0 1.0"/>
+            </material>
+            <!--<collision>
+                <geometry>
+                    <cylinder radius="${r}" length="${l}"/>
+                </geometry>
+            </collision>-->
+        </link>
+        <!--<gazebo reference="${name}">
+            <gravity>true</gravity>
+            <material>Gazebo/Grey</material>
+        </gazebo>-->
+    </xacro:macro>
+
+    <xacro:macro name="wheel_support" params="name mass r l">
+        <link name="${name}">
+            <inertial>
+                <mass value="${mass}"/>
+                <inertia ixx="${(1/12.0) * mass * (3*r*r + l*l)}" ixy="0.0" ixz="0.0" 
+                        iyy="${(1/12.0) * mass * (3*r*r + l*l)}" iyz="0.0"
+                        izz="${(1/2.0) * mass * (r*r)}"/>
+            </inertial>
+            <visual>
+                <geometry>
+                    <cylinder radius="${r}" length="${l}"/>
+                </geometry>
+            </visual>
+            <!--<collision>
+                <geometry>
+                    <cylinder radius="${r}" length="${l}"/>
+                </geometry>
+            </collision>-->
+        </link>
+        <gazebo reference="${name}">
+            <gravity>true</gravity>
+            <material>Gazebo/Grey</material>
+        </gazebo>
+    </xacro:macro>
+    
+    <xacro:macro name="wheel" params="name mass r l">
+        <link name="${name}">
+            <inertial>
+                <mass value="${mass}"/>
+                <inertia ixx="${(1/12.0) * mass * (3*r*r + l*l)}" ixy="0.0" ixz="0.0" 
+                        iyy="${(1/12.0) * mass * (3*r*r + l*l)}" iyz="0.0"
+                        izz="${(1/2.0) * mass * (r*r)}"/>
+            </inertial>
+            <visual>
+                <geometry>
+                    <cylinder radius="${r}" length="${l}"/>
+                </geometry>
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder radius="${r}" length="${l}"/>
+                </geometry>
+            </collision>
+        </link>
+        <gazebo reference="${name}">
+            <gravity>true</gravity>
+            <material>Gazebo/Black</material>
+        </gazebo>
+    </xacro:macro>
+
+    <xacro:if value="${velocity}">
+        <xacro:macro name="transmission_wheel" params="name">
+            <transmission name="${name}_trans">
+                <type>transmission_interface/SimpleTransmission</type>
+                <joint name="${name}_joint">
+                    <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+                </joint>
+                <actuator name="${name}_motor">
+                    <mechanicalReduction>1</mechanicalReduction>
+                    <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+                </actuator>
+            </transmission>
+        </xacro:macro>
+    </xacro:if>
+    <xacro:unless value="${velocity}">
+        <xacro:macro name="transmission_wheel" params="name">
+            <transmission name="${name}_trans">
+                <type>transmission_interface/SimpleTransmission</type>
+                <joint name="${name}_joint">
+                    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+                </joint>
+                <actuator name="${name}_motor">
+                    <mechanicalReduction>1</mechanicalReduction>
+                    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+                </actuator>
+            </transmission>
+        </xacro:macro>
+    </xacro:unless>
+    
+    <xacro:macro name="transmission_steering" params="name">
+        <transmission name="${name}_trans">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${name}_joint">
+                <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="${name}_motor">
+                <mechanicalReduction>1</mechanicalReduction>
+                <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+            </actuator>
+        </transmission>
+    </xacro:macro>
+
+    <xacro:macro name="transmission_contact" params="name">
+        <transmission name="${name}_trans">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${name}_joint">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="${name}_motor">
+                <mechanicalReduction>1</mechanicalReduction>
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </actuator>
+        </transmission>
+    </xacro:macro>
+    
+    <xacro:macro name="fixed_joint" params="name parent child x y z roll pitch yaw">
+        <joint name="${name}" type="fixed">
+            <origin xyz="${x} ${y} ${z}" rpy="${roll} ${pitch} ${yaw}"/>
+            <parent link="${parent}"/>
+            <child link="${child}"/>
+            <axis xyz="0 0 1"/>
+        </joint>
+    </xacro:macro>
+
+    <xacro:macro name="contact_joint" params="name parent child x y z roll pitch yaw type">
+        <joint name="${name}" type="${type}">
+            <origin xyz="${x} ${y} ${z}" rpy="${roll} ${pitch} ${yaw}"/>
+            <parent link="${parent}"/>
+            <child link="${child}"/>
+            <axis xyz="0 0 1"/>
+            <limit lower="${-pi/3}" upper="${pi/3}" effort="100.0" velocity="10.0"/>
+        </joint>
+    </xacro:macro>
+
+    <xacro:macro name="steering_joint" params="name parent child x y z roll pitch yaw type">
+        <joint name="${name}" type="${type}">
+            <origin xyz="${x} ${y} ${z}" rpy="${roll} ${pitch} ${yaw}"/>
+            <parent link="${parent}"/>
+            <child link="${child}"/>
+            <axis xyz="0 1 0"/>
+            <limit lower="${-pi/3}" upper="${pi/3}" effort="5.0" velocity="20.0"/>
+        </joint>
+    </xacro:macro>
+
+    <xacro:macro name="wheel_joint" params="name parent child x y z roll pitch yaw type">
+        <joint name="${name}" type="${type}">
+            <origin xyz="${x} ${y} ${z}" rpy="${roll} ${pitch} ${yaw}"/>
+            <parent link="${parent}"/>
+            <child link="${child}"/>
+            <axis xyz="0 0 1"/>
+            <limit effort="5.0" velocity="100.0"/>
+        </joint>
+    </xacro:macro>
+
+    <!-- Links -->
+    <xacro:base_link_xacro mass="13.6" l="0.3" w="0.2" h="0.1"/>
+
+    <xacro:wheel_support name="ws_fr_1" mass="0.03" r="0.005" l="0.177"/>
+    <xacro:wheel_support name="ws_fl_1" mass="0.03" r="0.005" l="0.177"/>
+    <xacro:wheel_support name="ws_br_1" mass="0.03" r="0.005" l="0.177"/>
+    <xacro:wheel_support name="ws_bl_1" mass="0.03" r="0.005" l="0.177"/>
+
+    <xacro:wheel_support name="ws_fr_2" mass="0.02" r="0.005" l="0.14"/>
+    <xacro:wheel_support name="ws_fl_2" mass="0.02" r="0.005" l="0.14"/>
+    <xacro:wheel_support name="ws_br_2" mass="0.02" r="0.005" l="0.14"/>
+    <xacro:wheel_support name="ws_bl_2" mass="0.02" r="0.005" l="0.14"/>
+
+    <xacro:wheel_steering name="front_right_steering" mass="0.01" l="0.01" w="0.01" h="0.01"/>
+    <xacro:wheel_steering name="front_left_steering" mass="0.01" l="0.01" w="0.01" h="0.01"/>
+    <xacro:wheel_steering name="back_right_steering" mass="0.01" l="0.01" w="0.01" h="0.01"/>
+    <xacro:wheel_steering name="back_left_steering" mass="0.01" l="0.01" w="0.01" h="0.01"/>
+
+    <xacro:wheel_support name="ws_fr_3" mass="0.01" r="0.005" l="0.05"/>
+    <xacro:wheel_support name="ws_fl_3" mass="0.01" r="0.005" l="0.05"/>
+    <xacro:wheel_support name="ws_br_3" mass="0.01" r="0.005" l="0.05"/>
+    <xacro:wheel_support name="ws_bl_3" mass="0.01" r="0.005" l="0.05"/>
+
+    <xacro:wheel_support name="ws_fr_4" mass="0.01" r="0.005" l="0.075"/>
+    <xacro:wheel_support name="ws_fl_4" mass="0.01" r="0.005" l="0.075"/>
+    <xacro:wheel_support name="ws_br_4" mass="0.01" r="0.005" l="0.075"/>
+    <xacro:wheel_support name="ws_bl_4" mass="0.01" r="0.005" l="0.075"/>
+
+    <xacro:wheel_support name="ws_fr_5" mass="0.01" r="0.005" l="0.05"/>
+    <xacro:wheel_support name="ws_fl_5" mass="0.01" r="0.005" l="0.05"/>
+    <xacro:wheel_support name="ws_br_5" mass="0.01" r="0.005" l="0.05"/>
+    <xacro:wheel_support name="ws_bl_5" mass="0.01" r="0.005" l="0.05"/>
+
+    <xacro:wheel name="front_right_wheel" mass="0.1" r="0.0645" l="0.065"/>
+    <xacro:wheel name="front_left_wheel" mass="0.1" r="0.0645" l="0.065"/>
+    <xacro:wheel name="back_right_wheel" mass="0.1" r="0.0645" l="0.065"/>
+    <xacro:wheel name="back_left_wheel" mass="0.1" r="0.0645" l="0.065"/>
+
+    <!-- Joints -->
+    <xacro:contact_joint name="front_right_contact_joint" parent="base_link" child="ws_fr_1" x="0.0075" y="-0.0885" z="-0.03" roll="${pi/2}" pitch="0.0" yaw="0.0" type="fixed"/>
+    <xacro:contact_joint name="front_left_contact_joint" parent="base_link" child="ws_fl_1" x="0.0075" y="0.0885" z="-0.03" roll="${pi/2}" pitch="0.0" yaw="0.0" type="fixed"/>
+    <xacro:contact_joint name="back_right_contact_joint" parent="base_link" child="ws_br_1" x="-0.0075" y="-0.0885" z="-0.03" roll="${pi/2}" pitch="0.0" yaw="0.0" type="fixed"/>
+    <xacro:contact_joint name="back_left_contact_joint" parent="base_link" child="ws_bl_1" x="-0.0075" y="0.0885" z="-0.03" roll="${pi/2}" pitch="0.0" yaw="0.0" type="fixed"/>
+
+    <xacro:fixed_joint name="fr_1_to_fr_2" parent="ws_fr_1" child="ws_fr_2" x="0.07" y="0.0" z="0.0885" roll="0.0" pitch="${pi/2}" yaw="0.0"/>
+    <xacro:fixed_joint name="fl_1_to_fl_2" parent="ws_fl_1" child="ws_fl_2" x="0.07" y="0.0" z="-0.0885" roll="0.0" pitch="${pi/2}" yaw="0.0"/>
+    <xacro:fixed_joint name="br_1_to_br_2" parent="ws_br_1" child="ws_br_2" x="-0.07" y="0.0" z="0.0885" roll="0.0" pitch="${pi/2}" yaw="0.0"/>
+    <xacro:fixed_joint name="bl_1_to_bl_2" parent="ws_bl_1" child="ws_bl_2" x="-0.07" y="0.0" z="-0.0885" roll="0.0" pitch="${pi/2}" yaw="0.0"/>
+
+    <xacro:steering_joint name="front_right_steering_joint" parent="ws_fr_2" child="front_right_steering" x="0.0" y="0.0" z="0.07" roll="0.0" pitch="0.0" yaw="0.0" type="revolute"/>
+    <xacro:steering_joint name="front_left_steering_joint" parent="ws_fl_2" child="front_left_steering" x="0.0" y="0.0" z="0.07" roll="0.0" pitch="0.0" yaw="0.0" type="revolute"/>
+    <xacro:steering_joint name="back_right_steering_joint" parent="ws_br_2" child="back_right_steering" x="0.0" y="0.0" z="-0.07" roll="0.0" pitch="0.0" yaw="0.0" type="revolute"/>
+    <xacro:steering_joint name="back_left_steering_joint" parent="ws_bl_2" child="back_left_steering" x="0.0" y="0.0" z="-0.07" roll="0.0" pitch="0.0" yaw="0.0" type="revolute"/>
+
+    <xacro:fixed_joint name="fr_steer_to_fr_3" parent="front_right_steering" child="ws_fr_3" x="0.025" y="0.0" z="0.0" roll="0.0" pitch="${pi/2}" yaw="0.0"/>
+    <xacro:fixed_joint name="fl_steer_to_fl_3" parent="front_left_steering" child="ws_fl_3" x="-0.025" y="0.0" z="0.0" roll="0.0" pitch="${pi/2}" yaw="0.0"/>
+    <xacro:fixed_joint name="br_steer_to_br_3" parent="back_right_steering" child="ws_br_3" x="0.025" y="0.0" z="0.0" roll="0.0" pitch="${pi/2}" yaw="0.0"/>
+    <xacro:fixed_joint name="bl_steer_to_bl_3" parent="back_left_steering" child="ws_bl_3" x="-0.025" y="0.0" z="0.0" roll="0.0" pitch="${pi/2}" yaw="0.0"/>
+
+    <xacro:fixed_joint name="fr_3_to_fr_4" parent="ws_fr_3" child="ws_fr_4" x="0.0" y="-0.0375" z="0.025" roll="${-pi/2}" pitch="0.0" yaw="0.0"/>
+    <xacro:fixed_joint name="fl_3_to_fl_4" parent="ws_fl_3" child="ws_fl_4" x="0.0" y="-0.0375" z="-0.025" roll="${-pi/2}" pitch="0.0" yaw="0.0"/>
+    <xacro:fixed_joint name="br_3_to_br_4" parent="ws_br_3" child="ws_br_4" x="0.0" y="-0.0375" z="0.025" roll="${-pi/2}" pitch="0.0" yaw="0.0"/>
+    <xacro:fixed_joint name="bl_3_to_bl_4" parent="ws_bl_3" child="ws_bl_4" x="0.0" y="-0.0375" z="-0.025" roll="${-pi/2}" pitch="0.0" yaw="0.0"/>
+
+    <xacro:fixed_joint name="fr_4_to_fr_5" parent="ws_fr_4" child="ws_fr_5" x="0.0" y="0.025" z="-0.0375" roll="${pi/2}" pitch="0.0" yaw="0.0"/>
+    <xacro:fixed_joint name="fl_4_to_fl_5" parent="ws_fl_4" child="ws_fl_5" x="0.0" y="-0.025" z="-0.0375" roll="${pi/2}" pitch="0.0" yaw="0.0"/>
+    <xacro:fixed_joint name="br_4_to_br_5" parent="ws_br_4" child="ws_br_5" x="0.0" y="0.025" z="-0.0375" roll="${pi/2}" pitch="0.0" yaw="0.0"/>
+    <xacro:fixed_joint name="bl_4_to_bl_5" parent="ws_bl_4" child="ws_bl_5" x="0.0" y="-0.025" z="-0.0375" roll="${pi/2}" pitch="0.0" yaw="0.0"/>
+    
+    <xacro:wheel_joint name="front_right_wheel_joint" parent="ws_fr_5" child="front_right_wheel" x="0.0" y="0.0" z="-0.025" roll="0.0" pitch="0.0" yaw="0.0" type="continuous"/>
+    <xacro:wheel_joint name="front_left_wheel_joint" parent="ws_fl_5" child="front_left_wheel" x="0.0" y="0.0" z="0.025" roll="0.0" pitch="0.0" yaw="0.0" type="continuous"/>
+    <xacro:wheel_joint name="back_right_wheel_joint" parent="ws_br_5" child="back_right_wheel" x="0.0" y="0.0" z="-0.025" roll="0.0" pitch="0.0" yaw="0.0" type="continuous"/>
+    <xacro:wheel_joint name="back_left_wheel_joint" parent="ws_bl_5" child="back_left_wheel" x="0.0" y="0.0" z="0.025" roll="0.0" pitch="0.0" yaw="0.0" type="continuous"/>
+
+    <!-- Transmissions  -->
+    <xacro:transmission_wheel name="front_right_wheel"/>
+    <xacro:transmission_wheel name="front_left_wheel"/>
+    <xacro:transmission_wheel name="back_right_wheel"/>
+    <xacro:transmission_wheel name="back_left_wheel"/>
+
+    <xacro:transmission_steering name="front_right_steering"/>
+    <xacro:transmission_steering name="front_left_steering"/>
+    <xacro:transmission_steering name="back_right_steering"/>
+    <xacro:transmission_steering name="back_left_steering"/>
+
+    <!--<xacro:transmission_contact name="front_right_contact"/>
+    <xacro:transmission_contact name="front_left_contact"/>
+    <xacro:transmission_contact name="back_right_contact"/>
+    <xacro:transmission_contact name="back_left_contact"/>-->
+
+    <gazebo>
+        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+            <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+        </plugin>
+
+        <!--<plugin name="contact_steering" filename="libcontact_steering_plugin.so">
+            <back_left_contact_joint>back_left_contact_joint</back_left_contact_joint>
+            <back_right_contact_joint>back_right_contact_joint</back_right_contact_joint>
+            <front_left_contact_joint>front_left_contact_joint</front_left_contact_joint>
+            <front_right_contact_joint>front_right_contact_joint</front_right_contact_joint>
+            <forceConstant>300.0</forceConstant>
+        </plugin>-->
+    </gazebo>
+
+</robot>

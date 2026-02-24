@@ -30,7 +30,7 @@ def _quaternionToEuler( quaternion ):
     """
 
     r = R.from_quat( [ quaternion.x, quaternion.y, quaternion.z, quaternion.w ] )
-
+    
     return r.as_euler('xyz')
 
 if __name__ == '__main__':
@@ -42,11 +42,7 @@ if __name__ == '__main__':
     rospy.Subscriber( '/gazebo/link_states', LinkStates, common._callback, 0 )                             #   '/gazebo/link_states' -> topic which collects perfect sensors data
     rospy.wait_for_message( '/gazebo/link_states', LinkStates )
 
-    pub_true_vehiclePose = rospy.Publisher( '/vehicle/true_pose3D', pose3DStamped, queue_size = 1 )                                                     #   '/vehicle/true_pose3D' -> topic for 3D pose
-    
-    ###
-    tfBuffer = tf2_ros.Buffer()
-    tf_listener = tf2_ros.TransformListener(tfBuffer)
+    pub_true_vehiclePose = rospy.Publisher( '/vehicle/true_pose3D', pose3DStamped, queue_size = 1 )        #   '/vehicle/true_pose3D' -> topic for 3D pose
 
     pub_loop_freq = rospy.Publisher( '/rosnode/poseConverter/loop_freq_rate', Float64, queue_size = 1 )
 
@@ -59,7 +55,7 @@ if __name__ == '__main__':
     
     loop_freq_rate = Float64(0)
 
-    print("[poseConverter.py] Simulation cycle is running!")
+    print("[" + rospy.get_name() + "] Simulation cycle is running!")
 
     while not rospy.is_shutdown():
         try:
@@ -85,7 +81,7 @@ if __name__ == '__main__':
             pub_true_vehiclePose.publish( true_pose_stamped )
         
         except(tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            print( "[poseConverter.py] Something went wrong!" )
+            print( "[" + rospy.get_name() + "] Something went wrong!" )
             continue
     
     rospy.spin()

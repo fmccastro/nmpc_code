@@ -1,0 +1,228 @@
+#!/usr/bin/python3
+from pathlib import Path
+
+classes_path = Path(__file__)
+
+upper_directory = classes_path.parent.parent.parent
+lower_directory = upper_directory / "src"
+
+from sys import path
+path.append( str(lower_directory) )
+
+from classes.frenet_serret_opti import *
+from classes.integrators_frenet import *
+from classes.common_class import *
+
+if __name__ == '__main__':
+    
+    common = Common()
+
+    with open(common.frenet_serret_dyn_skid) as f:
+        solver_param = json.load(f)
+        specs = solver_param["solver_specs"]
+        con_pose = solver_param["con_pose"]
+        con_vel = solver_param["con_vel"]
+        weights = solver_param["weights"]
+    
+    with open(common.vehicle_specs) as g:
+        vehicle_specs = json.load(g)
+
+    range_aux = 1000
+    
+    ##  Generate reference
+
+    #   Point
+    s = ca.SX.sym('s')
+    t = ca.SX.sym('t')
+    c = ca.SX.sym('c')
+    
+    #x_ref = ca.Function( 'x_ref', [s], [s] )
+    #y_ref = ca.Function( 'y_ref', [s], [0] )
+    #yaw_ref = ca.Function( 'yaw_ref', [s], [ca.atan(0)] )
+    #curvature = ca.Function( 'curvature', [s], [0] )
+
+    #   Sinusoid
+    #x_ref = ca.Function( 'x_ref', [s], [s] )
+    #y_ref = ca.Function( 'y_ref', [s], [1.0 * ca.cos(s)] )
+    #yaw_ref = ca.Function( 'yaw_ref', [s], [ ca.atan( -1.0 * ca.sin(s) ) ] )
+    #curvature = ca.Function( 'curvature', [s], [ -ca.cos(s) / (1 + ca.sin(s)**2)**1.5 ] )
+
+    #   Lissajous curve
+    x_ref = ca.Function( 'x_ref', [s], [ ca.sin(s + ca.pi/2.0) ] )
+    y_ref = ca.Function( 'y_ref', [s], [ ca.sin(2 * s) ] )
+    yaw_ref = ca.Function( 'yaw_ref', [s], [ ca.atan2( 2 * ca.cos(2 * s), ca.cos(s + ca.pi/2.0) ) ] )
+    curvature = ca.Function( 'curvature', [s], [ ( -4 * ca.cos(s + ca.pi/2.0) * ca.sin(2 * s) + 2 * ca.cos(2 * s) * ca.sin(s + ca.pi/2) ) / ( ca.cos(s + ca.pi/2)**2 + 4 * ca.cos(2 * s)**2 )**1.5 ] )
+
+    #   Pitch change
+    #pitch_constant = ca.Function( 'pitch_constant', [t, c], [c] )
+    #pitch_rampup = ca.Function( 'pitch_rampup', [t], [] )
+    #pitch_rampdown = ca.Function( 'pitch_rampdown', [t], [] )
+    #pitch_ramp = ca.Function( 'pitch_ramp', [t],  )
+
+    #   Roll change
+    #roll_constant = ca.Function( 'roll_constant', [t, c], [c] )
+    #roll_ramp
+
+    #   Set up nmpc countoring model
+    model = DynamicsFrenet(curvature)
+    integrator = IntegratorDynamicsSkidSteering(curvature)
+
+    next_state = [-1.0, -0.5, ca.pi/4, 0.0, 0.0, 0.0]
+    
+    cost_sqp = []
+    cost_p = []
+    cost_f = []
+    
+    time_tot = []
+    
+    #   Set up animation figure
+    plt.ion()
+    fig_anim, ax_anim = plt.subplots()
+
+    ax_anim.set( xlim=[-3.0, 3.0], ylim=[-3.0, 3.0], xlabel='X [m]', ylabel='Y [m]' )
+    ax_anim.set_aspect('equal')
+    ax_anim.legend()
+
+    x_position = [ float( x_ref(0) ) + ca.cos( float( yaw_ref(0) ) ) * next_state[0] - ca.sin( float( yaw_ref(0) ) ) * next_state[1] ]
+    y_position = [ float( y_ref(0) ) + ca.sin( float( yaw_ref(0) ) ) * next_state[0] + ca.cos( float( yaw_ref(0) ) ) * next_state[1] ]
+
+    pitch = 0.0
+    roll = 0.0
+    friction = 1.0
+
+    opt_time = []
+    cost = []
+
+    cone = friction * vehicle_specs["m"] * common.gz * math.cos(pitch) * math.cos(roll) / 4
+
+    if( cone >= 0 ):
+        fl_max = fr_max = cone
+        fl_min = fr_min  = -cone
+    
+    elif( cone < 0 ):
+        fl_max = fr_max = -cone
+        fl_min = fr_min  = cone
+
+    param = { 'pitch': pitch, 'roll': roll, 'friction': friction, 'fl_min': fl_min, 'fl_max': fl_max, 'fr_min': fr_min, 'fr_max': fr_max, 'fl_prev': 0.0, 'fr_prev': 0.0, 'friction': friction }
+    
+    for i in np.arange(range_aux):
+        
+        print("Iteration: ", i)
+
+        if( i == 0 ):
+            states = np.stack(next_state)
+            controls = np.stack( [0.0, 0.0, 0.0] )
+
+            param["fl_prev"] = 0.0
+            param["fr_prev"] = 0.0
+        
+        elif( i > 0 ):
+            states = np.vstack( ( states, np.stack(next_state) ) )
+            controls = np.vstack( ( controls, np.stack( [ fl_horizon[0], fr_horizon[0], virtual_speed_horizon[0] ] ) ) )
+
+            param["fl_prev"] = fl_horizon[0]
+            param["fr_prev"] = fr_horizon[0]
+
+        if( i == 0 ):
+            res = model._solve( next_state, None, param )
+            prev_res = res
+
+        if( i > 0 ):
+            res = model._solve( next_state, prev_res, param )
+            prev_res = res
+        
+        stats = model._getStats()
+
+        opt_time += [ stats["t_proc_total"] ]
+        cost += [ stats["iterations"]["obj"][-1] ]
+
+        s1_horizon = res[0]
+        y1_horizon = res[1]
+        diff_yaw_horizon = res[2]
+        progress_horizon = res[3]
+        vx_horizon = res[4]
+        wz_horizon = res[5]
+        fl_horizon = res[6]
+        fr_horizon = res[7]
+        virtual_speed_horizon = res[8]
+        
+        x_horizon = []
+        y_horizon = []
+
+        for s1, y1, p in zip(s1_horizon, y1_horizon, progress_horizon):
+
+            current_x_ref = float( x_ref(p) )
+            current_y_ref = float( y_ref(p) )
+            current_yaw_ref = float( yaw_ref(p) )
+
+            x_horizon += [ current_x_ref + ca.cos( current_yaw_ref ) * s1 - ca.sin( current_yaw_ref ) * y1 ]
+            y_horizon += [ current_y_ref + ca.sin( current_yaw_ref ) * s1 + ca.cos( current_yaw_ref ) * y1 ]
+
+        horizon_path_plot, = ax_anim.plot( x_horizon, y_horizon, 'r' )
+        ref_path_plot, = ax_anim.plot( x_ref( progress_horizon ), y_ref( progress_horizon ), 'k--' )
+
+        #ax_anim.set_xlim( x_horizon[0] - 0.1, x_horizon[0] + 0.6)
+        #ax_anim.set_ylim( y_horizon[0] - 0.3, y_horizon[0] + 0.3)
+    
+        #next_state = integrator._simulate( np.stack( next_state ), np.stack( [ fl_horizon[0], fr_horizon[0], virtual_speed_horizon[0] ] ), np.stack( [pitch] ) )
+
+        next_state = [ s1_horizon[1], y1_horizon[1], diff_yaw_horizon[1], progress_horizon[1], vx_horizon[1], wz_horizon[1] ]
+
+        x_position += [ float( x_ref( next_state[3] ) ) + ca.cos( float( yaw_ref( next_state[3] ) ) ) * next_state[0] - ca.sin( float( yaw_ref( next_state[3] ) ) ) * next_state[1] ]
+        y_position += [ float( y_ref( next_state[3] ) ) + ca.sin( float( yaw_ref( next_state[3] ) ) ) * next_state[0] + ca.cos( float( yaw_ref( next_state[3] ) ) ) * next_state[1] ]
+
+        fig_anim.canvas.draw()
+        fig_anim.canvas.flush_events()
+
+        horizon_path_plot.remove()
+        ref_path_plot.remove()
+    
+    plt.ioff()
+    plt.show()
+
+    fig, ax = plt.subplots(2, 6)
+    
+    ax[0, 0].plot( states[:, 0] )
+    ax[0, 0].set_title('s1')
+
+    ax[0, 1].plot( states[:, 1] )
+    ax[0, 1].set_title('y1')
+
+    ax[0, 2].plot( states[:, 2] )
+    ax[0, 2].set_title('Diff yaw')
+    
+    ax[0, 3].plot( states[:, 3] )
+    ax[0, 3].set_title('progress')
+
+    ax[0, 4].plot( x_position, y_position )
+    ax[0, 4].set_title('Position')
+
+    ax[1, 0].plot( states[:, 4] )
+    ax[1, 0].set_title('vx')
+
+    ax[1, 1].plot( states[:, 5] )
+    ax[1, 1].set_title('wz')
+
+    ax[1, 2].plot( controls[:, 0] )
+    ax[1, 2].set_title('fl')
+
+    ax[1, 3].plot( controls[:, 1] )
+    ax[1, 3].set_title('fr')
+
+    ax[1, 4].plot( controls[:, 2] )
+    ax[1, 4].set_title('Virtual speed')
+
+    fig2, ax2 = plt.subplots(1, 2)
+
+    ax2[0].plot(cost)
+    ax2[0].set_title('Cost')
+    
+    ax2[1].plot(opt_time)
+    ax2[1].set_title('Opt time')
+
+    plt.show()
+    
+    data2save = { 'cost': cost, 'opt_time': opt_time, 'x': list(x_position), 'y': list(y_position), 'progress': list( states[:, 3] ) }
+
+    with open(common.results_folder + "Initial_Comparison_nmpc/" + "frenet.json", "w") as f:
+        json.dump(data2save, f, indent=4)

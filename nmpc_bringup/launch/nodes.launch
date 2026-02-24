@@ -1,11 +1,13 @@
 <?xml version="1.0" ?>
 <launch>
-  <node name = "wheelKinematics" pkg = "nmpc_applications" type = "wheelKinematics.py" output = "screen" />
-  <node name = "poseConverter" pkg = "nmpc_applications" type = "poseConverter.py" output = "screen" />
-  <node name = "markers_path" pkg = "nmpc_applications" type = "markers_path.py" output = "screen" />
-  <node name = "markers_contactForces" pkg = "nmpc_applications" type = "markers_contactForces.py" output = "screen" />
-  <node name = "fastMarching" pkg = "nmpc_applications" type = "fastMarching.py" output = "screen" />
+  <node name = "wheelKinematics" pkg = "nmpc_applications" type = "wheelKinematics.py" output = "screen" launch-prefix="taskset -c 0"/>
+  <node name = "poseConverter" pkg = "nmpc_applications" type = "poseConverter.py" output = "screen" launch-prefix="taskset -c 1"/>
+  <node name = "markers_path" pkg = "nmpc_applications" type = "markers_path.py" output = "screen" launch-prefix="taskset -c 7"/>
+  <node name = "markers_contactForces" pkg = "nmpc_applications" type = "markers_contactForces.py" output = "screen" launch-prefix="taskset -c 0,1"/>
+  <node name = "fastMarching" pkg = "nmpc_applications" type = "fastMarching.py" output = "screen" launch-prefix="taskset -c 5"/>
   <node name = "nmpc_kinematics" pkg = "nmpc_applications" type = "nmpc_kinematics.py" output = "screen" />
-  <node name = "nmpc_dynamics" pkg = "nmpc_applications" type = "nmpc_dynamics.py" output = "screen" />
-  <node name = "terrainCorrection" pkg = "nmpc_applications" type = "terrainCorrection.py" output = "screen" />
+  <node name = "nmpc_dynamics" pkg = "nmpc_applications" type = "nmpc_dynamics.py" output = "screen" launch-prefix="taskset -c 6" />
+  <node name = "terrainCorrection" pkg = "nmpc_applications" type = "terrainCorrection.py" output = "screen" launch-prefix="taskset -c 3" />
+  <node name = "robotInertia" pkg = "nmpc_applications" type = "robotInertia.py" output = "screen" />
+  <node name = "broadcast_contactFrames" pkg = "nmpc_applications" type = "broadcast_contactFrames.py" output = "screen" />
 </launch>

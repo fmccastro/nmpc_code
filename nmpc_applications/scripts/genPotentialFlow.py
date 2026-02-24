@@ -29,7 +29,7 @@ if __name__ == '__main__':
     class SETTINGS(ctypes.Structure):
         _fields_ = [("nrows", ctypes.c_int), ("ncols", ctypes.c_int), ("maxCycles", ctypes.c_int),\
                     ("startingPoint", ctypes.c_double * 6), ("goalPoint", ctypes.c_double * 2),\
-                    ("maskValue", ctypes.c_double), ("pathGap", ctypes.c_double), ("goalCheck", ctypes.c_double)]
+                    ("pathGap", ctypes.c_double), ("goalCheck", ctypes.c_double)]
 
     planner_c._getPath2Follow.argtypes = [ctypes.POINTER(ctypes.c_double), SETTINGS]
 
@@ -73,8 +73,8 @@ if __name__ == '__main__':
         alpha:  alpha
         radius:   radius
     """
-    alpha = 0.9
-    radius = 0.2
+    alpha = 0.7
+    radius = 1.0
 
     """
         Load heightmap from original file
@@ -86,17 +86,15 @@ if __name__ == '__main__':
     #   Set parameters of speed map computation function ( e^( ln(a) / b) * x ) )
     b = 0.4
     a = 0.2
-    t1 = 0.6                        #   Set minimum untraversable cost
-    maskValue = 0.0
 
     """
         Plot speed map for the chosen specs (comment if needed)
     """
 
     #   + Start
-    maskedSpeedMap, maskedPotentialFlow = planner._getSpeedMap(option1, option3, radius, alpha, maskValue, t1, a, b)
-    planner._plotMap(maskedPotentialFlow, verLabel = "Time to goal [s]")
-    #planner._export2Publish(maskedSpeedMap, common.exportPlot2PubDir + "speedMap" + "+" + option1 + "+" + option3 + ".png", "Speed [m/s]")
+    speedMap, potentialFlow = planner._getSpeedMap(option1, option3, radius, alpha, a, b)
+    planner._plotMap(potentialFlow, verLabel = "Time to goal [s]")
+    planner._export2Publish(speedMap, common.exportPlot2PubDir + "speedMap" + "+" + option1 + "+" + option3 + ".png", "Speed [m/s]")
     #   - End
 
     """
@@ -104,8 +102,8 @@ if __name__ == '__main__':
     """
 
     #   + Start
-    """###   Plot levels   ##############################################################
-    gradx, grady = np.gradient(maskedPotentialFlow.filled(np.nan))
+    ###   Plot levels   ##############################################################
+    gradx, grady = np.gradient(potentialFlow)
     magnitude = np.sqrt(gradx**2 + grady**2)
 
     gradx = np.where(magnitude != 0, gradx / magnitude, 0)
@@ -120,21 +118,21 @@ if __name__ == '__main__':
     # Define levels in z-axis where we want lines to appear
     levels = np.linspace(5.0, 110, 20)
 
-    xx, yy = planner._getRealMeshgrid(maskedPotentialFlow)
+    xx, yy = planner._getRealMeshgrid(potentialFlow)
 
-    z_max = maskedPotentialFlow.max()
-    z_min = maskedPotentialFlow.min()
+    z_max = potentialFlow.max()
+    z_min = potentialFlow.min()
 
     norm = matplotlib.colors.Normalize(vmin = z_min, vmax = z_max)
 
     fig, ax1 = plt.subplots(layout="constrained")
     m = cm.ScalarMappable(cmap = cm.YlOrBr)
-    m.set_array(maskedPotentialFlow)
-    cpf = ax1.contourf(xx, yy, maskedPotentialFlow, len(levels), cmap = cm.YlOrBr, norm = norm)
+    m.set_array(potentialFlow)
+    cpf = ax1.contourf(xx, yy, potentialFlow, len(levels), cmap = cm.YlOrBr, norm = norm)
 
     # Set all level lines to black
     line_colors = ['black' for l in cpf.levels]
-    cp = ax1.contour(xx, yy, maskedPotentialFlow, levels=levels, colors=line_colors)
+    cp = ax1.contour(xx, yy, potentialFlow, levels=levels, colors=line_colors)
     ax1.clabel(cp, fontsize=10, colors=line_colors)
     clb = fig.colorbar(m, ax = ax1, label="Time to goal [s]")
     ax1.quiver(xx[::10, ::10], yy[::10, ::10], -grady[::10, ::10], gradx[::10, ::10], units='xy', scale=1.2, width = 0.1, color='blue')
@@ -173,7 +171,7 @@ if __name__ == '__main__':
     print("\n")
     
     #plt.show()
-    ###"""
+    ###
     #   - End
 
     """
@@ -182,12 +180,10 @@ if __name__ == '__main__':
     """
 
     #   + Start
-    """#   Run function _getPath2Follow in C
-    potentialFlow = maskedPotentialFlow.filled(maskValue)
 
     #   Define path settings
-    nrows = maskedPotentialFlow.shape[0]
-    ncols = maskedPotentialFlow.shape[1]
+    nrows = potentialFlow.shape[0]
+    ncols = potentialFlow.shape[1]
     goalPoint = (common.goalPoint[0], common.goalPoint[1])
     maxCycles = 800
     pathGap = common.pathGap
@@ -200,7 +196,6 @@ if __name__ == '__main__':
     paths = list()
 
     for _ in range(5):
-
         ref_e_c = None
 
         while(not ref_e_c):
@@ -210,7 +205,7 @@ if __name__ == '__main__':
             startingpoint_y = float(startingpoint_y)
             startingPoint = (startingpoint_x, startingpoint_y)
 
-            path_settings = SETTINGS(nrows, ncols, maxCycles, startingPoint, goalPoint, maskValue, pathGap, goalCheck)
+            path_settings = SETTINGS(nrows, ncols, maxCycles, startingPoint, goalPoint, 0.0, pathGap, goalCheck)
 
             print(f"| Run _getPath2Follow in Python.")
             start = time.time()
@@ -223,7 +218,7 @@ if __name__ == '__main__':
         paths += [ref_e_c_numpy]
 
     #planner._plotMap(maskedPotentialFlow, "Time to goal [s]", includePath = paths)
-    planner._export2Publish(maskedPotentialFlow, common.exportPlot2PubDir + "potentialFlow+paths" + "+" + option1 + "+" + option3 + ".pdf", "Time to goal [s]", includePath = paths)"""
+    planner._export2Publish(potentialFlow, common.exportPlot2PubDir + "potentialFlow+paths" + "+" + option1 + "+" + option3 + ".pdf", "Time to goal [s]", includePath = paths)
     #   - End
 
     """

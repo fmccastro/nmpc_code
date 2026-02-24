@@ -32,7 +32,7 @@ if __name__ == '__main__':
     class SETTINGS(ctypes.Structure):
         _fields_ = [("nrows", ctypes.c_int), ("ncols", ctypes.c_int), ("maxCycles", ctypes.c_int),\
                     ("startingPoint", ctypes.c_double * 2), ("goalPoint", ctypes.c_double * 2),\
-                    ("maskValue", ctypes.c_double), ("pathGap", ctypes.c_double), ("goalCheck", ctypes.c_double)]
+                    ("pathGap", ctypes.c_double), ("goalCheck", ctypes.c_double)]
 
     planner_c._getPath2Follow.argtypes = [ctypes.POINTER(ctypes.c_double), SETTINGS]
 
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     nrows = elevationMap.shape[0]
     ncols = elevationMap.shape[1]
     goalPoint = (common.goalPoint[0], common.goalPoint[1])
-    maxCycles = common.N
+    maxCycles = common.N + 3  # Get two more position references to allow forward shifting of the reference and filling terminal node 
     pathGap = common.pathGap
     goalCheck = common.goalCheck
 
@@ -63,68 +63,58 @@ if __name__ == '__main__':
         radius:   radius
     """
     alpha = 0.9
-    radius = 0.2
+    radius = 1.0
 
-    t1 = 0.6
     a = 0.2
     b = 0.4
     
     #   Get potential flow
-    maskedSpeedMap, maskedPotentialFlow = planner._getSpeedMap(common.option1, common.option3, radius, alpha, 0, t1, a, b)
+    speedMap, potentialFlow = planner._getSpeedMap(common.option1, common.option3, radius, alpha, a, b)
+
+    #planner._plotMap(speedMap, "Cost")
+    #planner._plotMap(potentialFlow, "Cost")
 
     #   Run function _getPath2Follow in C
-    potentialFlow = maskedPotentialFlow.filled(0)
-
     potentialFlow_flat = potentialFlow.ravel()  #   Flatten matrix by row order
     potentialFlow_c = (ctypes.c_double * potentialFlow_flat.size)(*potentialFlow_flat)
 
     rospy.init_node('pathPlanning', anonymous = True)
 
-    #   Ground truth data
-    if( common.poseType == 0 ):
-        rospy.Subscriber( '/gazebo/link_states', LinkStates, common._callback, 0 )                                           #   '/gazebo/link_states' -> topic which collects ground truth
-        rospy.Subscriber( '/vehicle/true_pose3D', pose3DStamped, common._callback, 3 )                                       #   '/vehicle/truePose' -> topic which collects robot perfect pose
-        rospy.Subscriber( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame, common._callback, 6 )            #   '/vehicle/trueVelocity_bodyFrame' -> topic which collect robot links perfect velocity
+    rospy.Subscriber( '/gazebo/link_states', LinkStates, common._callback, 0 )                                           #   '/gazebo/link_states' -> topic which collects ground truth
+    rospy.Subscriber( '/vehicle/true_pose3D', pose3DStamped, common._callback, 3 )                                       #   '/vehicle/truePose' -> topic which collects robot perfect pose
+    rospy.Subscriber( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame, common._callback, 6 )            #   '/vehicle/trueVelocity_bodyFrame' -> topic which collect robot links perfect velocity
 
-        rospy.wait_for_message( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame )
-        rospy.wait_for_message( '/gazebo/link_states', LinkStates )
-        rospy.wait_for_message( '/vehicle/true_pose3D', pose3DStamped )
-
-    #   Fused data (with noise)
-    if( common.poseType == 1 ):
-        rospy.Subscriber( '/vehicle/true_pose3D', pose3DStamped, common._callback, 3 )                                       #   '/vehicle/truePose' -> topic which collects robot perfect pose
-        rospy.Subscriber( '/vehicle/noisy_pose3D', pose3DStamped, common._callback, 4 )                                      #   '/vehicle/noisy_pose3D' -> topic which collects robot perfect pose
-        rospy.Subscriber( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame, common._callback, 6 )            #   '/vehicle/trueVelocity_bodyFrame' -> topic which collect robot links perfect velocity
-
-        rospy.wait_for_message( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame )
-        rospy.wait_for_message( '/vehicle/true_pose3D', pose3DStamped )
-        rospy.wait_for_message( '/vehicle/noisy_pose3D', pose3DStamped )
+    rospy.wait_for_message( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame )
+    rospy.wait_for_message( '/gazebo/link_states', LinkStates )
+    rospy.wait_for_message( '/vehicle/true_pose3D', pose3DStamped )
 
     pub_nodePeriod = rospy.Publisher( '/node/fastMarching/period', Float32, queue_size = 1 )
 
     pub_ref = rospy.Publisher('/vehicle/reference', referencePath, queue_size = 1)
 
-    gt_baseLinkIndex, _, _, _, _ = common._getLinksIndex( common.gazeboLinkStates )
-
-    print("[fastMarching.py] Simulation cycle is running!")
+    print("[" + rospy.get_name() + "] Simulation cycle is running!")
 
     msg = referencePath()
 
+    last_yaw = 0
+    
     while not rospy.is_shutdown():
         try:
             start = time.time()
             
             currentPose = common.true_pose3D.pose
             currentVelocity = common.true_velocity_bodyFrame.velocity[0]
-
+            
             startingPoint = (currentPose.x, currentPose.y)
-            path_settings = SETTINGS(nrows, ncols, maxCycles + 1, startingPoint, goalPoint, 0, pathGap, goalCheck)
+            path_settings = SETTINGS(nrows, ncols, maxCycles, startingPoint, goalPoint, pathGap, goalCheck)
             
             #   Get optimal path from selected potential flow
             ref_e_c = planner_c._getPath2Follow(potentialFlow_c, path_settings)
 
             #   Smooth path
-            smoothPath = planner._smoothPath(ref_e_c, 0.3, maxCycles)
+            smoothPath = planner._smoothPath(ref_e_c, 0.4, last_yaw)
+
+            last_yaw = smoothPath[-1]
 
             msg.reference = smoothPath
             msg.startingPose = currentPose
@@ -139,6 +129,6 @@ if __name__ == '__main__':
 
         except(tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             pass
-            print( "[nmpc.py] Something went wrong!" )
+            print( "[" + rospy.get_name() + "] Something went wrong!" )
     
     rospy.spin()

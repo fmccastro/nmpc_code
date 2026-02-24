@@ -15,7 +15,7 @@
 #endif
 
 //  Compile with: gcc -shared -fPIC -o planner.so planner.c -lm
-//  Tested for Ubuntu 24.04
+//  Tested for Ubuntu 20.04
 
 /*
             Pixels to meters transformation (real frame)
@@ -76,7 +76,7 @@ typedef TEMPO* heapTimes;
 
 typedef struct ssettings {
     int nrows, ncols, maxCycles;
-    double startingPoint[2], goalPoint[2], maskValue, pathGap, goalCheck;
+    double startingPoint[2], goalPoint[2], pathGap, goalCheck;
 } SETTINGS;
 
 void _transformation(double *x, double *y, char* option)
@@ -275,11 +275,6 @@ heapPositions _getPath2Follow(double* timeMap, SETTINGS data_settings) {
         return NULL;
     }
 
-    if(timeMap[start_i * data_settings.ncols + start_j] == data_settings.maskValue) {
-        printf("| Starting position is masked.\n");
-        return NULL;
-    }
-
     //  Initialize path (head of positions)
     heapPositions path = NULL;
 
@@ -293,7 +288,11 @@ heapPositions _getPath2Follow(double* timeMap, SETTINGS data_settings) {
     bool flagMask;
     double aux_time, next_time, next_yaw;
 
-    while(index <= data_settings.maxCycles) {
+    //printf("Real current position: %f %f\n", prev_x_mt, prev_y_mt);
+
+    //printf("Number of cycles: %d\n", data_settings.maxCycles);
+
+    while(index < data_settings.maxCycles) {
         int border_indexes[CONTIGOUS_CELLS][2] = { {start_i-1, start_j}, {start_i-1, start_j-1}, {start_i-1, start_j+1},\
                                                     {start_i, start_j - 1}, {start_i, start_j + 1},\
                                                     {start_i + 1, start_j}, {start_i + 1, start_j - 1}, {start_i + 1, start_j + 1} };
@@ -312,7 +311,7 @@ heapPositions _getPath2Follow(double* timeMap, SETTINGS data_settings) {
             else {
                 aux_time = timeMap[ border_indexes[index2][0] * data_settings.ncols + border_indexes[index2][1] ];
 
-                if(aux_time != data_settings.maskValue && aux_time < MAXTIME) {
+                if(aux_time < MAXTIME) {
                     insert_new_time(&times, aux_time);
                     flagMask = true;
                 }
@@ -345,19 +344,19 @@ heapPositions _getPath2Follow(double* timeMap, SETTINGS data_settings) {
         //  Convert pixel coordinates to meters with respect to real frame
         _transformation(&new_i, &new_j, "pix2MetersRealFrame");
 
-        //printf("Index: %d\n", index);
-        //printf("%f %f\n", new_i, new_j);
-        //printf("%f %f\n", data_settings.goalPoint[0], data_settings.goalPoint[1]);
-        //printf("%f\n", data_settings.goalCheck);
+        if( index == 0 ) {
 
-        //  Check if global minimum was achieved
-        if( sqrt( pow(new_i - data_settings.goalPoint[0], 2) + pow(new_j - data_settings.goalPoint[1], 2) ) <= data_settings.goalCheck  ) {
-            printf("| Global minimum was achieved.\n");
-            break;
+            //printf("Current position: %f %f\n\n", new_i, new_j);
+
+            //  Check if global minimum was achieved
+            if( sqrt( pow(new_i - data_settings.goalPoint[0], 2) + pow(new_j - data_settings.goalPoint[1], 2) ) <= data_settings.goalCheck  ) {
+                //printf("| Global minimum was achieved.\n");
+                break;
+            }
         }
         
         if(next_time > last_time) {
-            printf("| Local minimum was achieved.\n");
+            //printf("| Global minimum was achieved.\n");
             break;
         }
         

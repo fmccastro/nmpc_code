@@ -10,8 +10,7 @@
        xmlns:xacro="http://www.ros.org/wiki/xacro">
 
 <!-- Velocity or traction based actuation -->
-<xacro:property name="velocity" value="true"/>
-<xacro:property name="teleoperation" value="false"/>
+<xacro:property name="velocity" value="false"/>
 
   <!-- Chassis -->
   <link name="base_link">
@@ -444,7 +443,7 @@
     <child link="back_right_axle"/>
     <axis xyz="0 1 0"/>
   </joint>
-
+    
   <link name="back_right_hub">
     <inertial>
       <mass value="0.1"/>
@@ -517,7 +516,7 @@
     <sensor name="back_right_wheel_contact" type="contact">
       <always_on>true</always_on>
       <update_rate>100.0</update_rate>
-      <plugin name="ContactPlugin" filename="libnmpc_applications.so">
+      <plugin name="ContactPlugin" filename="libcontacts_plugin.so">
         <topic>/back_right_wheel_contact</topic>
       </plugin>
       <contact>
@@ -529,7 +528,7 @@
     <kp>1e12</kp>
     <kd>1</kd>
   </gazebo>
-
+  
   <gazebo reference="front_right_wheel">
     <gravity>true</gravity>
     <material>Gazebo/Black</material>
@@ -539,7 +538,7 @@
     <sensor name="front_right_wheel_contact" type="contact">
       <always_on>true</always_on>
       <update_rate>100.0</update_rate>
-      <plugin name="ContactPlugin" filename="libnmpc_applications.so">
+      <plugin name="ContactPlugin" filename="libcontacts_plugin.so">
         <topic>/front_right_wheel_contact</topic>
       </plugin>
       <contact>
@@ -551,7 +550,7 @@
     <kp>1e12</kp>
     <kd>1</kd>
   </gazebo>
-
+  
   <gazebo reference="back_left_wheel">
     <gravity>true</gravity>
     <material>Gazebo/Black</material>
@@ -561,7 +560,7 @@
     <sensor name="back_left_wheel_contact" type="contact">
       <always_on>true</always_on>
       <update_rate>100.0</update_rate>
-      <plugin name="ContactPlugin" filename="libnmpc_applications.so">
+      <plugin name="ContactPlugin" filename="libcontacts_plugin.so">
         <topic>/back_left_wheel_contact</topic>
       </plugin>
       <contact>
@@ -573,7 +572,7 @@
     <kp>1e12</kp>
     <kd>1</kd>
   </gazebo>
-
+  
   <gazebo reference="front_left_wheel">
     <gravity>true</gravity>
     <material>Gazebo/Black</material>
@@ -583,7 +582,7 @@
     <sensor name="front_left_wheel_contact" type="contact">
       <always_on>true</always_on>
       <update_rate>100.0</update_rate>
-      <plugin name="ContactPlugin" filename="libnmpc_applications.so">
+      <plugin name="ContactPlugin" filename="libcontacts_plugin.so">
         <topic>/front_left_wheel_contact</topic>
       </plugin>
       <contact>
@@ -688,30 +687,29 @@
     </transmission>
   </xacro:unless>
 
-  <xacro:if value="${teleoperation}">
-    <gazebo>
-      <plugin name="skid_steer_drive_controller" filename="libgazebo_ros_skid_steer_drive.so">
-        <updateRate>100.0</updateRate>
-        <robotNamespace>/model/pioneer3at</robotNamespace>
-        <leftFrontJoint>front_left_wheel_joint</leftFrontJoint>
-        <rightFrontJoint>front_right_wheel_joint</rightFrontJoint>
-        <leftRearJoint>back_left_wheel_joint</leftRearJoint>
-        <rightRearJoint>back_right_wheel_joint</rightRearJoint>
-        <wheelSeparation>0.4</wheelSeparation>
-        <wheelDiameter>0.222</wheelDiameter>
-        <robotBaseFrame>base_link</robotBaseFrame>
-        <torque>20</torque>
-        <topicName>/cmd_vel</topicName>
-        <broadcastTF>false</broadcastTF>
-      </plugin>
-    </gazebo>
-  </xacro:if>
-  <xacro:unless value="${teleoperation}">
-    <gazebo>
-      <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-        <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
-      </plugin>
-    </gazebo>
-  </xacro:unless>
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+    </plugin>
+
+    <plugin name="set_wrenches_links" filename="libset_force_links_plugin.so">
+      <baseLink>base_link</baseLink>
+      <backLeftWheelLink>back_left_wheel</backLeftWheelLink>
+      <frontLeftWheelLink>front_left_wheel</frontLeftWheelLink>
+      <backRightWheelLink>back_right_wheel</backRightWheelLink>
+      <frontRightWheelLink>front_right_wheel</frontRightWheelLink>
+    </plugin>
+
+    <plugin name="get_wrenches_links" filename="libget_force_links_plugin.so">
+      <baseLink>base_link</baseLink>
+      <backLeftWheelLink>back_left_wheel</backLeftWheelLink>
+      <frontLeftWheelLink>front_left_wheel</frontLeftWheelLink>
+      <backRightWheelLink>back_right_wheel</backRightWheelLink>
+      <frontRightWheelLink>front_right_wheel</frontRightWheelLink>
+    </plugin>
+
+    <!--<plugin name="set_torque_joints" filename="libset_torque_joints_plugin.so"/>-->
+
+  </gazebo>
 
 </robot>

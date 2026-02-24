@@ -7,6 +7,7 @@
 #include <gazebo_msgs/ContactState.h>
 #include <gazebo_msgs/ContactsState.h>
 #include <geometry_msgs/Vector3.h>
+#include <geometry_msgs/Wrench.h>
 
 // Custom Callback Queue
 #include <ros/callback_queue.h>
@@ -68,41 +69,59 @@ namespace gazebo
 
       //  Get number of contacts
       int nbContacts = contacts.contact_size();
-
-      //contactStamped2Pub.header.stamp = contacts.contact(0).time();
+      
       contactStamped2Pub.states.clear();
-    
+      
       contact2Pub.contact_normals.clear();
       contact2Pub.contact_positions.clear();
-
-      //std::cout << nbContacts << "\n";
+      contact2Pub.wrenches.clear();
 
       if( nbContacts > 0 )
       {
-        int size = contacts.contact(nbContacts - 1).position_size();
+        size = 0;
+        index = 0;
 
-        for (unsigned int j = 0; j < size; ++j)
+        for(unsigned int i = 0; i <= nbContacts - 1; ++i)
         {
+          int aux = contacts.contact(i).position_size();
+          
+          if( aux >= size )
+          {
+            size = aux;
+            index = i;
+          }
+        }
+        
+        for (unsigned int j = 0; j < size; ++j)
+        { 
           //  Get contact position
-          this->position.x = contacts.contact(nbContacts - 1).position(j).x();
-          this->position.y = contacts.contact(nbContacts - 1).position(j).y();
-          this->position.z = contacts.contact(nbContacts - 1).position(j).z();
-
+          this->position.x = contacts.contact(index).position(j).x();
+          this->position.y = contacts.contact(index).position(j).y();
+          this->position.z = contacts.contact(index).position(j).z();
+          
           //  Get contact normal
-          this->normal.x = contacts.contact(nbContacts - 1).normal(j).x();
-          this->normal.y = contacts.contact(nbContacts - 1).normal(j).y();
-          this->normal.z = contacts.contact(nbContacts - 1).normal(j).z();
-
+          this->normal.x = contacts.contact(index).normal(j).x();
+          this->normal.y = contacts.contact(index).normal(j).y();
+          this->normal.z = contacts.contact(index).normal(j).z();
+          
+          //  Get normal force sustained at that contact
+          this->normalForce.force.x = contacts.contact(index).wrench(j).body_1_wrench().force().x();
+          this->normalForce.force.y = contacts.contact(index).wrench(j).body_1_wrench().force().y();
+          this->normalForce.force.z = contacts.contact(index).wrench(j).body_1_wrench().force().z();
+          
           contact2Pub.info = "ON";
           contact2Pub.contact_positions.push_back(this->position);
           contact2Pub.contact_normals.push_back(this->normal);
+          contact2Pub.wrenches.push_back(this->normalForce);
         }
-
+        
         contactStamped2Pub.states.push_back(contact2Pub);
+        
       }
       else {
         contact2Pub.info = "OFF";
         contactStamped2Pub.states.push_back(contact2Pub);
+
       }
 
       //  Publish latest contacts
@@ -123,7 +142,8 @@ namespace gazebo
     private: gazebo_msgs::ContactsState contactStamped2Pub;
     private: gazebo_msgs::ContactState contact2Pub;
     private: geometry_msgs::Vector3 normal, position;
-    private: int size;
+    private: geometry_msgs::Wrench normalForce;
+    private: int size, index;
   };
 
   GZ_REGISTER_SENSOR_PLUGIN(ContactPlugin)

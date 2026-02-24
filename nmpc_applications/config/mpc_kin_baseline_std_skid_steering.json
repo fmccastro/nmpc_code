@@ -1,0 +1,43 @@
+{   
+    "solver_specs": {"qp_solver": "PARTIAL_CONDENSING_HPIPM",
+                     "solver": "SQP",
+                     "cost_type": "EXTERNAL",
+                     "N": 30,
+                     "Ts": 0.01,
+                     "gz": -9.81 },
+
+    "con_pose": {"x_lb": -1e3,
+                 "x_ub": 1e3,
+                 "y_lb": -1e3,
+                 "y_ub": 1e3,
+                 "yaw_lb": -1e5,
+                 "yaw_ub": 1e5},
+    
+    "progress_lb": -1e3,
+    "progress_ub": 1e3,
+    
+    "con_vel": {"u_lb": 0.0,
+                "u_ub": 2e0,
+                "r_lb": -1e1,
+                "r_ub": 1e1,
+                "virtual_speed_lb": 0.0,
+                "virtual_speed_ub": 1e0},
+
+    "con_rates": {"u_rate_lb": -2e1,
+                  "u_rate_ub": 2e1,
+                  "r_rate_lb": -2e1,
+                  "r_rate_ub": 2e1,
+                  "virtual_speed_rate_lb": -1e1,
+                  "virtual_speed_rate_ub": 1e1},
+
+    "weights": {"Q_x": 3e0,
+                "Q_y": 3e0,
+                "Q_yaw": 1e0,
+                "Q_x_t": 3e0,
+                "Q_y_t": 3e0,
+                "Q_yaw_t": 1e0,
+                "Q_u_rate": 0e-1,
+                "Q_r_rate": 0e-2,
+                "Q_virtual_speed": 1e0,
+                "Q_virtual_speed_rate": 0e-4}
+}

@@ -52,8 +52,8 @@ if __name__ == '__main__':
         alpha:  alpha
         radius:   radius
     """
-    alpha = 0.9
-    radius = 0.3
+    alpha = 0.7
+    radius = 1.0
 
     """
         Load heightmap from original file

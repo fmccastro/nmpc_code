@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     common = Common()
 
-    if( common.simulationType != 0 ):
+    if( common.simulationType >= 2 ):
         rospy.signal_shutdown("[" + rospy.get_name() + "] Shut down node.")
     
     #   Publishers
@@ -31,6 +31,12 @@ if __name__ == '__main__':
     pub_frontLeftWheelRate = rospy.Publisher('/front_left_wheel_plant/command', Float64, queue_size = 1)
     pub_backRightWheelRate = rospy.Publisher('/back_right_wheel_plant/command', Float64, queue_size = 1)
     pub_frontRightWheelRate = rospy.Publisher('/front_right_wheel_plant/command', Float64, queue_size = 1)
+
+    if( common.robot == "rover" ):
+        pub_backLeftSteeringPosition = rospy.Publisher('/back_left_steering_plant/command', Float64, queue_size = 1)
+        pub_frontLeftSteeringPosition = rospy.Publisher('/front_left_steering_plant/command', Float64, queue_size = 1)
+        pub_backRightSteeringPosition = rospy.Publisher('/back_right_steering_plant/command', Float64, queue_size = 1)
+        pub_frontRightSteeringPosition = rospy.Publisher('/front_right_steering_plant/command', Float64, queue_size = 1)
 
     pub_nodePeriod = rospy.Publisher( '/vehicle/node/nmpc_kinematics/period', Float64, queue_size = 1 )
 
@@ -40,86 +46,31 @@ if __name__ == '__main__':
     pub_command_vx = rospy.Publisher('/vehicle/nmpc_kinematics/vx', Float32, queue_size = 1)
     pub_command_wz = rospy.Publisher('/vehicle/nmpc_kinematics/wz', Float32, queue_size = 1)
 
-    rospy.Subscriber( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame, common._callback, 6 )            #   '/vehicle/trueVelocity_bodyFrame' ->topic which collect robot links perfect velocity
-    rospy.Subscriber( '/vehicle/true_pose3D', pose3DStamped, common._callback, 3 )                                       #   '/vehicle/truePose' -> topic which collects robot perfect pose
-
-    rospy.wait_for_message( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame )
-    rospy.wait_for_message( '/vehicle/true_pose3D', pose3DStamped )
-
     #   Subscriptions
     rospy.Subscriber( '/gazebo/link_states', LinkStates, common._callback, 0 )                                              #   '/gazebo/link_states' -> topic which collects ground truth
     rospy.Subscriber( '/joint_states', JointState, common._callback, 8 )                                                    #   '/vehicle/joint_states' -> topic which collects the joint position and velocity ( linear or angular )  
-    rospy.Subscriber( '/vehicle/reference', referencePath, common._multiArrayCallback, 0 )                              #   '/vehicle/reference' -> topic which collects the reference path                                                   
+    rospy.Subscriber( '/vehicle/reference', referencePath, common._multiArrayCallback, 0 )                                  #   '/vehicle/reference' -> topic which collects the reference path   
+    rospy.Subscriber( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame, common._callback, 6 )               #   '/vehicle/trueVelocity_bodyFrame' ->topic which collect robot links perfect velocity
+    rospy.Subscriber( '/vehicle/true_pose3D', pose3DStamped, common._callback, 3 )                                          #   '/vehicle/truePose' -> topic which collects robot perfect pose
+    #rospy.Subscriber( '/vehicle/inertia', Inertia, common._callback, 33 )                                                   #   '/vehicle/inertia' -> topic which collects robot inertia                                             
 
     rospy.wait_for_message( '/joint_states', JointState )
     rospy.wait_for_message( '/gazebo/link_states', LinkStates )
     rospy.wait_for_message( '/vehicle/reference', referencePath )
-
-    #   Services
-    rospy.wait_for_service( '/gazebo/get_world_properties' )
-    rospy.wait_for_service( '/gazebo/get_model_properties' )
-    rospy.wait_for_service( '/gazebo/get_link_properties' )
-    rospy.wait_for_service( '/gazebo/get_physics_properties' )
-    rospy.wait_for_service( '/controller_manager/list_controllers' )
-    rospy.wait_for_service( '/controller_manager/unload_controller' )
-    rospy.wait_for_service( '/controller_manager/switch_controller' )
-
-    get_world_properties = rospy.ServiceProxy( '/gazebo/get_world_properties', GetWorldProperties )
-    get_model_properties = rospy.ServiceProxy( '/gazebo/get_model_properties', GetModelProperties )
-    get_link_properties = rospy.ServiceProxy( '/gazebo/get_link_properties', GetLinkProperties )
-    get_physics_properties = rospy.ServiceProxy( '/gazebo/get_physics_properties', GetPhysicsProperties )
-    list_controllers = rospy.ServiceProxy('/controller_manager/list_controllers', ListControllers)
-    unload_controller = rospy.ServiceProxy('/controller_manager/unload_controller', UnloadController)
-    switch_controller = rospy.ServiceProxy('/controller_manager/switch_controller', SwitchController)
-
-    worldProperties = get_world_properties()
-
-    vehicleProperties = common._getVehicleProperties( worldProperties, get_model_properties )
-
-    vehicleMass = common._getVehicleMass( vehicleProperties, get_link_properties )
-
-    physicsProperties = get_physics_properties()
-
-    baseLinkIndex, backLeftIndex, frontLeftIndex, backRightIndex, frontRightIndex = common._getLinksVelocitiesIndex( common.true_velocity_bodyFrame )
-
-    backLeftJointIndex, frontLeftJointIndex, backRightJointIndex, frontRightJointIndex = common._getJointStatesIndex( common.jointStates )
-
-    gt_baseLinkIndex, _, _, _, _ = common._getLinksIndex( common.gazeboLinkStates )
+    rospy.wait_for_message( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame )
+    rospy.wait_for_message( '/vehicle/true_pose3D', pose3DStamped )
+    #rospy.wait_for_message( '/vehicle/inertia', Inertia )
 
     """
         Get center of mass to wheels vector
     """
 
-    tf_flag = True
-
-    while(tf_flag):
-        try:
-            tfBuffer = tf2_ros.Buffer()
-            listener = tf2_ros.TransformListener(tfBuffer)
-
-            d_bl = tfBuffer.lookup_transform('base_link', 'back_left_hub', rospy.Time(0))
-            d_fl = tfBuffer.lookup_transform('base_link', 'front_left_hub', rospy.Time(0))
-            d_br = tfBuffer.lookup_transform('base_link', 'back_right_hub', rospy.Time(0))
-            d_fr = tfBuffer.lookup_transform('base_link', 'front_right_hub', rospy.Time(0))
-            
-            robotInertia = common._computeCOM(vehicleProperties, get_link_properties, tfBuffer)
-            
-            com2wheels = { 'com2bl': [d_bl.transform.translation.x - robotInertia.com.x, d_bl.transform.translation.y - robotInertia.com.y, d_bl.transform.translation.z - robotInertia.com.z],\
-                           'com2fl': [d_fl.transform.translation.x - robotInertia.com.x, d_fl.transform.translation.y - robotInertia.com.y, d_fl.transform.translation.z - robotInertia.com.z],\
-                           'com2br': [d_br.transform.translation.x - robotInertia.com.x, d_br.transform.translation.y - robotInertia.com.y, d_br.transform.translation.z - robotInertia.com.z],\
-                           'com2fr': [d_fr.transform.translation.x - robotInertia.com.x, d_fr.transform.translation.y - robotInertia.com.y, d_fr.transform.translation.z - robotInertia.com.z] }
-            
-            #   Save com2wheels to file
-            with open( common.results_folder + "com2wheels_" + common.robot + '.pickle', 'wb') as handle:
-                pickle.dump(com2wheels, handle, protocol = pickle.HIGHEST_PROTOCOL)
-
-            tf_flag = False
-            
-        except(tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            print( "[" + rospy.get_name() + "] COM and MoI were not computed." )
-
     #   Path tracking
-    model = Kinematics()
+    if( common.robot == "rover" ):
+        model = KinematicsBicycle()
+
+    else:
+        model = Kinematics()
     
     index = 0
 
@@ -131,35 +82,37 @@ if __name__ == '__main__':
     ###
 
     #   Register signal handler
-    signal_handler = partial(common._signal_handler, node = "[nmpc.py]")
+    signal_handler = partial(common._signal_handler, node = "[" + rospy.get_name() + "]")
     signal.signal(signal.SIGINT, signal_handler)
     ###
 
-    print("[nmpc_kinematics.py] Simulation loop is running!")
+    print("[" + rospy.get_name() + "] Simulation loop is running!")
 
     while not rospy.is_shutdown():
         try:
             start = time.time()
             
             currentPose = common.true_pose3D.pose
+            #robotInertia = common.inertia
 
             #   Check if goal point is achieved in order to break simulation loop
             if( math.dist( [currentPose.x, currentPose.y], common.goalPoint ) <= common.goalCheck ):
-                print("[nmpc_kinematics.py] Goal point was reached. Simulation ends.")
+                print("[" + rospy.get_name() + "] Goal point was reached. Simulation ends.")
                 break
                 
             else:
                 if(index == 0):
-                    print("[nmpc_kinematics.py] Starting initial iterations to find a suitable initial guess.")
+                    print("[" + rospy.get_name() + "] Starting initial iterations to find a suitable initial guess.")
 
                     path2Follow = common.referencePath
 
                     initialPose = path2Follow.startingPose
                     reference = list(path2Follow.reference)
-                    
-                    model._setInitialGuess(common.N + 1, [initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw], reference)
 
-                    input("[nmpc_kinematics.py] Wait for input to start simulation cycle.")
+                    model._setReference(reference)
+                    model._setInitialGuess(common.N + 1, [initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw])
+
+                    input("[" + rospy.get_name() + "] Wait for input to start simulation cycle.")
 
                 if( common.nlp_solver_type == 'SQP' ):
                     path2Follow = common.referencePath
@@ -169,31 +122,65 @@ if __name__ == '__main__':
                     
                     currentVelocity = common.true_velocity_bodyFrame.velocity[0]
 
-                    next_vx, next_wz = model._solve([initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw], reference)
+                    if( common.robot == "rover" ):
+                        next_v, next_delta = model._solve_sqp([initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw], reference)
+                    
+                    else:
+                        next_v, next_wz = model._solve_sqp([initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw], reference)
 
                 elif( common.nlp_solver_type == 'SQP_RTI' ):
-                    model._preparation_sqp_rti()
-
                     path2Follow = common.referencePath
                     
-                    initialPose = path2Follow.startingPose
                     reference = path2Follow.reference
 
-                    currentVelocity = common.true_velocity_bodyFrame.velocity[0]
+                    model._preparation_sqp_rti(reference)
 
-                    next_vx, next_wz = model._feedback_sqp_rti([initialPose.x, initialPose.y, initialPose.z, initialPose.roll, initialPose.pitch, initialPose.yaw], reference)
+                    currentPose = common.true_pose3D.pose
+
+                    if( common.robot == "rover" ):
+                        next_v, next_delta = model._feedback_sqp_rti([currentPose.x, currentPose.y, currentPose.z, currentPose.roll, currentPose.pitch, currentPose.yaw])
+
+                    else:
+                        next_vx, next_wz = model._feedback_sqp_rti([currentPose.x, currentPose.y, currentPose.z, currentPose.roll, currentPose.pitch, currentPose.yaw])
 
                 solutionX, solutionU, cost, optTime = model._data()
 
                 horizonPath.data = solutionX
                 horizonVelocity.data = solutionU + solutionU[-2:]
+                joint_states = common.jointStates.position
 
-                next_wr, next_wl = common._cmdVelocity2JointVelocity(next_vx, next_wz)
+                if( common.simulationType < 2 ):
+                    if( common.robot == "rover"):
+                        L = common.wheelLonSeparation / 2
+                        d = common.wheelLatSeparation / 2
 
-                pub_backLeftWheelRate.publish(next_wl)
-                pub_frontLeftWheelRate.publish(next_wl)
-                pub_backRightWheelRate.publish(next_wr)
-                pub_frontRightWheelRate.publish(next_wr)
+                        icr = L / math.tan(next_delta)
+
+                        #print("(v, delta, ICR): ", next_v, next_delta, icr)
+
+                        delta_fl = math.atan( L / (icr - d) )
+                        delta_fr = math.atan( L / (icr + d) )
+
+                        w_fl = next_v * math.sqrt( math.pow(L, 2) + math.pow(icr - d, 2) ) / ( common.wheelRadius * abs(icr) )
+                        w_fr = next_v * math.sqrt( math.pow(L, 2) + math.pow(icr + d, 2) ) / ( common.wheelRadius * abs(icr) )
+
+                        pub_backLeftWheelRate.publish( w_fl )
+                        pub_frontLeftWheelRate.publish( w_fl )
+                        pub_backRightWheelRate.publish( w_fr )
+                        pub_frontRightWheelRate.publish( w_fr )
+
+                        pub_backLeftSteeringPosition.publish(-delta_fl)
+                        pub_frontLeftSteeringPosition.publish(delta_fl)
+                        pub_backRightSteeringPosition.publish(-delta_fr)
+                        pub_frontRightSteeringPosition.publish(delta_fr)
+
+                    else:
+                        next_wr, next_wl = common._cmdVelocity2JointVelocity(next_vx, next_wz, rocker_l_angle = joint_states[4], rocker_r_angle = joint_states[5])
+                        
+                        pub_backLeftWheelRate.publish(next_wl)
+                        pub_frontLeftWheelRate.publish(next_wl)
+                        pub_backRightWheelRate.publish(next_wr)
+                        pub_frontRightWheelRate.publish(next_wr)
 
                 pub_command_vx.publish(solutionU[0])
                 pub_command_wz.publish(solutionU[1])
@@ -208,7 +195,7 @@ if __name__ == '__main__':
             index += 1
 
         except(tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            print( "[nmpc_kinematics.py] Something went wrong!" )
+            print( "[" + rospy.get_name() + "] Something went wrong!" )
     
     pub_backLeftWheelRate.publish(0.0)
     pub_frontLeftWheelRate.publish(0.0)

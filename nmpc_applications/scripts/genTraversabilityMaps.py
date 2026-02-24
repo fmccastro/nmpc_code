@@ -46,12 +46,12 @@ if __name__ == '__main__':
 
         option1:    HeightMin   ;   maxTerrainRoughness     ;   HeightMin_maxInclination
     """
-    option1 = "maxTerrainRoughness"
+    option1 = "HeightMin"
 
     """
         Option 2 simulation options
 
-        option2:    NO_InitialGuess ; With_InitialGuess_X0 ; With_InitialGuess_X0_LAM_X_LAM_G
+        option2:    NO_InitialGuess ; With_InitialGuess_X0
     """
     option2 = "With_InitialGuess_X0"
 
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     """
         Option 4 simulation options
         
-        option4:    Map1    ;   Map2
+        option4:    Map1    ;   Map2    ;   Map3
     """
     option4 = "Map1"
 
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     
     print("[" + os.path.basename(__file__) + "]" + " Build traversability map with options: " + "( " + option1 + " ; " + option2 + " ; " + option3 + " ; " + str(common.mapFolder) + " )")
     results = planner._terrainTraversability(option1, option2, option3, 0, thetaDiv = 5, yDiv = 1)
-    
+         
     end = time.time() - start
 
     results["totalTime"] = end

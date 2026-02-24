@@ -44,25 +44,25 @@ def _quaternionToEuler( quaternion ):
 def _turn_velocity_into_bodyFrame( _velocity, rotationMatrix, rpy ):
 
     velocity = Twist()
-        
+    
     roll = rpy[0]
     pitch = rpy[1]
     yaw = rpy[2]
-        
+
     pitchMatrix = np.matrix( [ [math.cos(pitch), 0, math.sin(pitch)],
-                                    [0, 1, 0],
-                                    [-math.sin(pitch), 0, math.cos(pitch)] ])
+                                [0, 1, 0],
+                                [-math.sin(pitch), 0, math.cos(pitch)] ])
     
     rollMatrix = np.matrix( [ [1, 0, 0],
-                                    [0, math.cos(roll), -math.sin(roll)],
-                                    [0, math.sin(roll), math.cos(roll)] ])
+                              [0, math.cos(roll), -math.sin(roll)],
+                              [0, math.sin(roll), math.cos(roll)] ])
 
     linVelocity_bodyFrame = rotationMatrix.T @ np.array( [ _velocity.linear.x, _velocity.linear.y, _velocity.linear.z ] ).reshape(-1, 1)
     angVelocity_bodyFrame = rotationMatrix.T @ np.array( [ _velocity.angular.x, _velocity.angular.y, _velocity.angular.z ] ).reshape(-1, 1)
-
-    angVelocity_bodyFrame = np.array( [_velocity.angular.x, 0, 0] ).reshape(-1, 1) +\
+    
+    """angVelocity_bodyFrame = np.array( [_velocity.angular.x, 0, 0] ).reshape(-1, 1) +\
                             rollMatrix @ np.array( [0, _velocity.angular.y, 0] ).reshape(-1, 1) +\
-                            rollMatrix @ pitchMatrix @ np.array( [0, 0, _velocity.angular.z] ).reshape(-1, 1)
+                            rollMatrix @ pitchMatrix @ np.array( [0, 0, _velocity.angular.z] ).reshape(-1, 1)"""
 
     velocity.angular.x = angVelocity_bodyFrame[0, 0]
     velocity.angular.y = angVelocity_bodyFrame[1, 0]
@@ -81,7 +81,10 @@ if __name__ == '__main__':
     rospy.init_node('wheelKinematics', anonymous = True)
 
     rospy.Subscriber( '/gazebo/link_states', LinkStates, common._callback, 0 )                             #   '/gazebo/link_states' -> topic which collects perfect sensors data
+    #rospy.Subscriber( '/vehicle/inertia', Inertia, common._callback, 33 )                                  #   '/vehicle/inertia' -> topic which collects robot inertia
+
     rospy.wait_for_message( '/gazebo/link_states', LinkStates )
+    #rospy.wait_for_message( '/vehicle/inertia', Inertia )
 
     pub_true_velocity_bodyFrame = rospy.Publisher( '/vehicle/true_velocity_bodyFrame', wheelTrueVelocitiesBodyFrame, queue_size = 1 )                   #   '/vehicle/true_velocity_bodyFrame' -> topic for true velocity
 
@@ -90,17 +93,11 @@ if __name__ == '__main__':
     rospy.wait_for_service( '/gazebo/get_model_properties' )
     rospy.wait_for_service( '/gazebo/get_link_properties' )
     rospy.wait_for_service( '/gazebo/get_physics_properties' )
-    rospy.wait_for_service( '/controller_manager/list_controllers' )
-    rospy.wait_for_service( '/controller_manager/unload_controller' )
-    rospy.wait_for_service( '/controller_manager/switch_controller' )
 
     get_world_properties = rospy.ServiceProxy( '/gazebo/get_world_properties', GetWorldProperties )
     get_model_properties = rospy.ServiceProxy( '/gazebo/get_model_properties', GetModelProperties )
     get_link_properties = rospy.ServiceProxy( '/gazebo/get_link_properties', GetLinkProperties )
     get_physics_properties = rospy.ServiceProxy( '/gazebo/get_physics_properties', GetPhysicsProperties )
-    list_controllers = rospy.ServiceProxy('/controller_manager/list_controllers', ListControllers)
-    unload_controller = rospy.ServiceProxy('/controller_manager/unload_controller', UnloadController)
-    switch_controller = rospy.ServiceProxy('/controller_manager/switch_controller', SwitchController)
 
     ###
 
@@ -110,9 +107,9 @@ if __name__ == '__main__':
     ###
     worldProperties = get_world_properties()
 
-    vehicleProperties = common._getVehicleProperties( worldProperties, get_model_properties )
+    #vehicleProperties = common._getVehicleProperties( worldProperties, get_model_properties )
 
-    vehicleMass = common._getVehicleMass( vehicleProperties, get_link_properties )
+    #vehicleMass = common._getVehicleMass( vehicleProperties, get_link_properties )
 
     physicsProperties = get_physics_properties()
 
@@ -122,31 +119,7 @@ if __name__ == '__main__':
         Get center of mass to wheels vector
     """
 
-    tf_flag = True
-
-    while(tf_flag):
-        try:
-            tfBuffer = tf2_ros.Buffer()
-            listener = tf2_ros.TransformListener(tfBuffer)
-
-            d_bl = tfBuffer.lookup_transform('base_link', 'back_left_hub', rospy.Time(0))
-            d_fl = tfBuffer.lookup_transform('base_link', 'front_left_hub', rospy.Time(0))
-            d_br = tfBuffer.lookup_transform('base_link', 'back_right_hub', rospy.Time(0))
-            d_fr = tfBuffer.lookup_transform('base_link', 'front_right_hub', rospy.Time(0))
-            
-            robotInertia = common._computeCOM(vehicleProperties, get_link_properties, tfBuffer)
-            
-            com2wheels = { 'com2bl': [d_bl.transform.translation.x - robotInertia.com.x, d_bl.transform.translation.y - robotInertia.com.y, d_bl.transform.translation.z - robotInertia.com.z],\
-                           'com2fl': [d_fl.transform.translation.x - robotInertia.com.x, d_fl.transform.translation.y - robotInertia.com.y, d_fl.transform.translation.z - robotInertia.com.z],\
-                           'com2br': [d_br.transform.translation.x - robotInertia.com.x, d_br.transform.translation.y - robotInertia.com.y, d_br.transform.translation.z - robotInertia.com.z],\
-                           'com2fr': [d_fr.transform.translation.x - robotInertia.com.x, d_fr.transform.translation.y - robotInertia.com.y, d_fr.transform.translation.z - robotInertia.com.z] }
-
-            tf_flag = False
-            
-        except(tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            print( "[" + rospy.get_name() + "] COM and MoI were not computed." )
-
-    print("[wheelKinematics.py] Simulation cycle is running!")
+    print("[" + rospy.get_name() + "] Simulation cycle is running!")
 
     while not rospy.is_shutdown():
         try:
@@ -161,19 +134,19 @@ if __name__ == '__main__':
 
             v_bl = np.array( [ true_velocity_baseLink_bodyFrame.linear.x, true_velocity_baseLink_bodyFrame.linear.y, true_velocity_baseLink_bodyFrame.linear.z ] ) +\
                     np.cross( np.array( [ true_velocity_baseLink_bodyFrame.angular.x, true_velocity_baseLink_bodyFrame.angular.y, true_velocity_baseLink_bodyFrame.angular.z ] ),\
-                                np.array( [ com2wheels["com2bl"][0], com2wheels["com2bl"][1], com2wheels["com2bl"][2] ] ) )
+                                np.array( [ common.com2wheels["com2bl"][0], common.com2wheels["com2bl"][1], common.com2wheels["com2bl"][2] ] ) )
             
             v_fl = np.array( [ true_velocity_baseLink_bodyFrame.linear.x, true_velocity_baseLink_bodyFrame.linear.y, true_velocity_baseLink_bodyFrame.linear.z ] ) +\
                     np.cross( np.array( [ true_velocity_baseLink_bodyFrame.angular.x, true_velocity_baseLink_bodyFrame.angular.y, true_velocity_baseLink_bodyFrame.angular.z ] ),\
-                                np.array( [ com2wheels["com2fl"][0], com2wheels["com2fl"][1], com2wheels["com2fl"][2] ] ) )
+                                np.array( [ common.com2wheels["com2bl"][0], common.com2wheels["com2bl"][1], common.com2wheels["com2bl"][2] ] ) )
             
             v_br = np.array( [ true_velocity_baseLink_bodyFrame.linear.x, true_velocity_baseLink_bodyFrame.linear.y, true_velocity_baseLink_bodyFrame.linear.z ] ) +\
                     np.cross( np.array( [ true_velocity_baseLink_bodyFrame.angular.x, true_velocity_baseLink_bodyFrame.angular.y, true_velocity_baseLink_bodyFrame.angular.z ] ),\
-                                np.array( [ com2wheels["com2br"][0], com2wheels["com2br"][1], com2wheels["com2br"][2] ] ) )
+                                np.array( [ common.com2wheels["com2bl"][0], common.com2wheels["com2bl"][1], common.com2wheels["com2bl"][2] ] ) )
         
             v_fr = np.array( [ true_velocity_baseLink_bodyFrame.linear.x, true_velocity_baseLink_bodyFrame.linear.y, true_velocity_baseLink_bodyFrame.linear.z ] ) +\
                     np.cross( np.array( [ true_velocity_baseLink_bodyFrame.angular.x, true_velocity_baseLink_bodyFrame.angular.y, true_velocity_baseLink_bodyFrame.angular.z ] ),\
-                                np.array( [ com2wheels["com2fr"][0], com2wheels["com2fr"][1], com2wheels["com2fr"][2] ] ) )
+                                np.array( [ common.com2wheels["com2bl"][0], common.com2wheels["com2bl"][1], common.com2wheels["com2bl"][2] ] ) )
 
             true_velocity_backLeftWheel_bodyFrame = Twist( Vector3(v_bl[0], v_bl[1], v_bl[2]), Vector3() )
             true_velocity_frontLeftWheel_bodyFrame = Twist( Vector3(v_fl[0], v_fl[1], v_fl[2]), Vector3() )
@@ -187,7 +160,7 @@ if __name__ == '__main__':
             pub_true_velocity_bodyFrame.publish( true_velocity_bodyFrame )
 
         except(tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            print( "[wheelKinematics.py] Something went wrong!" )
+            print( "[" + rospy.get_name() + "] Something went wrong!" )
             continue
     
     rospy.spin()

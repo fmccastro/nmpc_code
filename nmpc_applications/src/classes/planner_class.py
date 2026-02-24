@@ -243,6 +243,7 @@ class Planner(Common):
         ax1.set_ylabel("y [m]", fontname="Arial")
         ax1.set_xticklabels(ax1.get_xticks(), fontname='Arial', fontsize=12)
         ax1.set_yticklabels(ax1.get_yticks(), fontname='Arial', fontsize=12)
+        ax1.scatter(self.goalPoint[0], self.goalPoint[1], s=10.0, c='r', marker='o')
 
         if( verLabel == "Height [m]" ):
             if(includePath is not None):
@@ -1662,7 +1663,7 @@ class Planner(Common):
 
         return np.array(path)
 
-    def _smoothPath(self, input, end, maxCycles):
+    def _smoothPath(self, input, end, last_yaw):
 
         """
             Convert result from C function call in Python into a Float32MultiArray msg type
@@ -1673,36 +1674,69 @@ class Planner(Common):
         output_x = []
         output_y = []
 
+        output_x_equal = []
+        output_y_equal = []
+
+        index = 0
+
         while input:
-            output_x += [input.contents.x]
-            output_y += [input.contents.y]
+            if (index == 0):
+                next_x = input.contents.x
+                next_y = input.contents.y
 
+                output_x += [next_x]
+                output_y += [next_y]
+            
+            elif(index > 0):
+                last_x = next_x
+                last_y = next_y
+
+                next_x = input.contents.x
+                next_y = input.contents.y
+
+                if( next_x == last_x and next_y == last_y ):
+                    output_x_equal += [next_x]
+                    output_y_equal += [next_y]
+
+                else:
+                    output_x += [next_x]
+                    output_y += [next_y]                   
+            
             input = input.contents.next  # Move to the next node
+
+            index += 1
+
+        len_path = len(output_x)
+        len_path_add = len(output_x_equal)
+
+        if( len_path > 1 ):
+            
+            # Fit a B-spline representation to the data
+            tck, u = splprep( [ np.array(output_x), np.array(output_y) ], s = 0.2 )  # s is the smoothing factor
+            
+            len_path = len(output_x)
+            len_path_add = len(output_x_equal)
+
+            # Generate new points along the smooth curve
+            u_fine = np.linspace(0, end, len_path)
+            x_smooth, y_smooth = splev(u_fine, tck)
+
+            len_path = len(x_smooth)
+            len_path_add = len(output_x_equal)
+
+            path2Follow_smooth = []
+
+            for _ in range(len_path - 1):
+                yaw_smooth = math.atan2( y_smooth[_ + 1] - y_smooth[_], x_smooth[_ + 1] - x_smooth[_] )
+                path2Follow_smooth += [x_smooth[_], y_smooth[_], yaw_smooth]
+            
+            path2Follow_smooth += [x_smooth[_ + 1], y_smooth[_ + 1], yaw_smooth]
         
-        # Fit a B-spline representation to the data
-        tck, u = splprep( [ np.array(output_x), np.array(output_y) ], s = 0.1 )  # s is the smoothing factor
+        else:
+            path2Follow_smooth = [output_x[-1], output_y[-1], last_yaw]
 
-        #tx = np.linspace(0, 1, len(output_x))
-        #ty = np.linspace(0, 1, len(output_y))
-
-        """csx = CubicSpline(tx, output_x)
-        csy = CubicSpline(ty, output_y)
-
-        t_smooth = np.linspace(0, end, maxCycles + 1)
-        x_smooth = csx(t_smooth)
-        y_smooth = csy(t_smooth)"""
-
-        # Generate new points along the smooth curve
-        u_fine = np.linspace(0, end, maxCycles + 1)
-        x_smooth, y_smooth = splev(u_fine, tck)
-
-        path2Follow_smooth = []
-
-        for _ in range(maxCycles):
-            yaw_smooth = math.atan2( y_smooth[_ + 1] - y_smooth[_], x_smooth[_ + 1] - x_smooth[_] )
-            path2Follow_smooth += [x_smooth[_], y_smooth[_], yaw_smooth]
-        
-        path2Follow_smooth += [x_smooth[_ + 1], y_smooth[_ + 1], yaw_smooth]
+        for _ in range(len_path_add):
+            path2Follow_smooth += path2Follow_smooth[-3:]
 
         return path2Follow_smooth
         
@@ -1856,7 +1890,7 @@ class Planner(Common):
         else:
             return ref_euler, ref_quat
     
-    def _getSpeedMap(self, option1, option3, radius, threshold, maskValue, t1, a, b):
+    def _getSpeedMap(self, option1, option3, radius, threshold, a, b):
 
         """
             Get masked speed map and potential flow
@@ -1876,23 +1910,15 @@ class Planner(Common):
         #   Initialize map transformation parameters
         self._updateTransformationParameters(costMap)
 
-        maskedSpeedMap = np.zeros( ( costMap.shape[0], costMap.shape[1] ) )
         speedMap = np.zeros( ( costMap.shape[0], costMap.shape[1] ) )
 
         for i in range( costMap.shape[0] ):
             for j in range( costMap.shape[1] ):
-                if( costMap[i, j] >= t1 ):
-                    speedMap[i, j] = maskValue
-                    maskedSpeedMap[i, j] = 1
+                speedMap[i, j] = math.exp( math.log(a) / b * costMap[i, j])
 
-                else:
-                    speedMap[i, j] = math.exp( math.log(a) / b * costMap[i, j])
+        potentialFlow = self._isometricMap(speedMap)
 
-        maskedSpeedMap = np.ma.masked_array(speedMap, mask = maskedSpeedMap)
-
-        maskedPotentialFlow = self._isometricMap(maskedSpeedMap)
-
-        return maskedSpeedMap, maskedPotentialFlow
+        return speedMap, potentialFlow
 
     def _getGradientPotential(self, distance, minObs, fm2 = False):
         

@@ -8,6 +8,8 @@ WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLACK = (0, 0, 0)
+BLUE = (0, 120, 215)
+DARK_BLUE = (0, 100, 180)
 
 pygame.init()
 
@@ -56,6 +58,16 @@ pygame.display.set_caption("Joystick mouse handler")
 # 2nd parameter is size of the font
 font = pygame.font.SysFont('monospace', 20)
 
+# Button properties
+button_rect = pygame.Rect(10, 30, 80, 30)
+button_color = BLUE
+hover_color = DARK_BLUE
+text = font.render("RESET", True, WHITE)
+
+pygame.draw.rect(display, hover_color, button_rect)
+text_rect = text.get_rect(center=button_rect.center)
+display.blit(text, text_rect)
+
 clock = pygame.time.Clock()
 FPS = 100    #   Set display update rate
 
@@ -99,13 +111,32 @@ def joy_display(publisher):
                 #   Assign velocities to print
                 vx = round(mouse_pos[1] * m_vx + b_vx, 3)
                 wz = round(mouse_pos[0] * m_wz + b_wz, 3)
-
+                
                 #   Set new text
                 v_x_text = font.render(f'vx [m/s]  : {vx}', True, WHITE)
                 w_z_text = font.render(f'wz [rad/s]: {wz}', True, WHITE)
 
                 last_pos = mouse_pos
+        
+            elif( button_rect.collidepoint(mouse_pos) ):
 
+                #   Erase text by placing black rectangle over it
+                pygame.draw.rect(display, BLACK, (10, 440, 230, 30))
+                pygame.draw.rect(display, BLACK, (10, 470, 230, 30))
+
+                #   Delete last circle by drawing a black one above
+                pygame.draw.circle(display, BLACK, last_pos, 6, 0)
+                pygame.draw.circle(display, GREEN, (center_x, center_y), 3, 0)
+                pygame.draw.circle(display, RED, (center_x, center_y), 5, 0)
+
+                vx = 0.0
+                wz = 0.0
+
+                v_x_text = font.render(f'vx [m/s]  : {vx}', True, WHITE)
+                w_z_text = font.render(f'wz [rad/s]: {wz}', True, WHITE)
+
+                last_pos = (center_x, center_y)
+ 
         msg = Twist()
         msg.linear.x = vx
         msg.angular.z = wz
@@ -123,7 +154,9 @@ if __name__ == '__main__':
 
     rospy.init_node('teleop_mouse_joy', anonymous = True)
 
-    pub_command = rospy.Publisher('/model/pioneer3at/cmd_vel', Twist, queue_size=10)
+    pub_command = rospy.Publisher('/mouse/cmd_vel', Twist, queue_size=10)
+
+    print("[" + rospy.get_name() + "] Loop is running.")
 
     while not rospy.is_shutdown():
         try:

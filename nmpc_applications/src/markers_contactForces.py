@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     common = Common()
 
-    if( common.simulationType < 1 ):
+    if( common.simulationType < 2 ):
         rospy.signal_shutdown("[" + rospy.get_name() + "] Shut down node.")
 
     rospy.init_node( 'markers', anonymous = True )
@@ -40,7 +40,12 @@ if __name__ == '__main__':
     markerBackLeftWheelNormalForce.type = 0
     markerBackLeftWheelNormalForce.scale = Vector3(0.05, 0.1, 0.2)
     markerBackLeftWheelNormalForce.color = ColorRGBA(1.0, 0.0, 0.0, 1.0)
-    markerBackLeftWheelNormalForce.header.frame_id = "back_left_hub"
+
+    if( common.simulationType == 2 ):
+        markerBackLeftWheelNormalForce.header.frame_id = "back_left_hub"
+
+    else:
+        markerBackLeftWheelNormalForce.header.frame_id = "contact_back_left"
 
     markerBackLeftWheelTractionForce = Marker()
     
@@ -51,7 +56,12 @@ if __name__ == '__main__':
     markerBackLeftWheelTractionForce.type = 0
     markerBackLeftWheelTractionForce.scale = Vector3(0.05, 0.1, 0.2)
     markerBackLeftWheelTractionForce.color = ColorRGBA(1.0, 0.0, 0.0, 1.0)
-    markerBackLeftWheelTractionForce.header.frame_id = "back_left_hub"
+
+    if( common.simulationType == 2 ):
+        markerBackLeftWheelTractionForce.header.frame_id = "back_left_hub"
+
+    else:
+        markerBackLeftWheelTractionForce.header.frame_id = "contact_back_left"
     ###
 
     #   Marker front left wheel (red arrows)
@@ -64,7 +74,12 @@ if __name__ == '__main__':
     markerFrontLeftWheelNormalForce.type = 0
     markerFrontLeftWheelNormalForce.scale = Vector3(0.05, 0.1, 0.2)
     markerFrontLeftWheelNormalForce.color = ColorRGBA(1.0, 0.0, 0.0, 1.0)
-    markerFrontLeftWheelNormalForce.header.frame_id = "front_left_hub"
+
+    if( common.simulationType == 2 ):
+        markerFrontLeftWheelNormalForce.header.frame_id = "front_left_hub"
+
+    else:
+        markerFrontLeftWheelNormalForce.header.frame_id = "contact_front_left"
 
     markerFrontLeftWheelTractionForce = Marker()
     
@@ -75,7 +90,12 @@ if __name__ == '__main__':
     markerFrontLeftWheelTractionForce.type = 0
     markerFrontLeftWheelTractionForce.scale = Vector3(0.05, 0.1, 0.2)
     markerFrontLeftWheelTractionForce.color = ColorRGBA(1.0, 0.0, 0.0, 1.0)
-    markerFrontLeftWheelTractionForce.header.frame_id = "front_left_hub"
+
+    if( common.simulationType == 2 ):
+        markerFrontLeftWheelTractionForce.header.frame_id = "front_left_hub"
+
+    else:
+        markerFrontLeftWheelTractionForce.header.frame_id = "contact_front_left"
     ###
 
     #   Marker back right wheel (red arrows)
@@ -88,7 +108,12 @@ if __name__ == '__main__':
     markerBackRightWheelNormalForce.type = 0
     markerBackRightWheelNormalForce.scale = Vector3(0.05, 0.1, 0.2)
     markerBackRightWheelNormalForce.color = ColorRGBA(1.0, 0.0, 0.0, 1.0)
-    markerBackRightWheelNormalForce.header.frame_id = "back_right_hub"
+
+    if( common.simulationType == 2 ):
+        markerBackRightWheelNormalForce.header.frame_id = "back_right_hub"
+
+    else:
+        markerBackRightWheelNormalForce.header.frame_id = "contact_back_right"
 
     markerBackRightWheelTractionForce = Marker()
     
@@ -99,7 +124,12 @@ if __name__ == '__main__':
     markerBackRightWheelTractionForce.type = 0
     markerBackRightWheelTractionForce.scale = Vector3(0.05, 0.1, 0.2)
     markerBackRightWheelTractionForce.color = ColorRGBA(1.0, 0.0, 0.0, 1.0)
-    markerBackRightWheelTractionForce.header.frame_id = "back_right_hub"
+
+    if( common.simulationType == 2 ):
+        markerBackRightWheelTractionForce.header.frame_id = "back_right_hub"
+
+    else:
+        markerBackRightWheelTractionForce.header.frame_id = "contact_back_right"
     ###
 
     #   Marker front right wheel (red arrows)
@@ -112,7 +142,12 @@ if __name__ == '__main__':
     markerFrontRightWheelNormalForce.type = 0
     markerFrontRightWheelNormalForce.scale = Vector3(0.05, 0.1, 0.2)
     markerFrontRightWheelNormalForce.color = ColorRGBA(1.0, 0.0, 0.0, 1.0)
-    markerFrontRightWheelNormalForce.header.frame_id = "front_right_hub"
+
+    if( common.simulationType == 2 ):
+        markerFrontRightWheelNormalForce.header.frame_id = "front_right_hub"
+
+    else:
+        markerFrontRightWheelNormalForce.header.frame_id = "contact_front_right"
 
     markerFrontRightWheelTractionForce = Marker()
     
@@ -123,19 +158,19 @@ if __name__ == '__main__':
     markerFrontRightWheelTractionForce.type = 0
     markerFrontRightWheelTractionForce.scale = Vector3(0.05, 0.1, 0.2)
     markerFrontRightWheelTractionForce.color = ColorRGBA(1.0, 0.0, 0.0, 1.0)
-    markerFrontRightWheelTractionForce.header.frame_id = "front_right_hub"
+
+    if( common.simulationType == 2 ):
+        markerFrontRightWheelTractionForce.header.frame_id = "front_right_hub"
+
+    else:
+        markerFrontRightWheelTractionForce.header.frame_id = "contact_front_right"
     ###
 
-    print( "[markers_path.py] Simulation loop is running!" )
+    print( "[" + rospy.get_name() + "] Simulation loop is running!" )
 
     while( not rospy.is_shutdown() ):
         try:
             forces = common.wheelForces
-
-            alpha_bl = forces.contactAngle[0]
-            alpha_fl = forces.contactAngle[1]
-            alpha_br = forces.contactAngle[2]
-            alpha_fr = forces.contactAngle[3]
 
             normal_bl = forces.normalForce[0]
             normal_fl = forces.normalForce[1]
@@ -149,20 +184,14 @@ if __name__ == '__main__':
 
             #   Back left wheel
             if( normal_bl > 1e-3 ):
-                contactPoint_bl_x = common.wheelRadius * math.sin(alpha_bl)
-                contactPoint_bl_z = -common.wheelRadius * math.cos(alpha_bl)
-
-                end_traction_bl_x = contactPoint_bl_x + math.cos(alpha_bl) * traction_bl / (common.niu * normal_bl)
-                end_traction_bl_z = contactPoint_bl_z + math.sin(alpha_bl) * traction_bl / (common.niu * normal_bl)
-
-                end_normal_bl_x = contactPoint_bl_x - math.sin(alpha_bl)
-                end_normal_bl_z = contactPoint_bl_z + math.cos(alpha_bl)
-
                 markerBackLeftWheelNormalForce.action = 0
                 markerBackLeftWheelTractionForce.action = 0
 
-                markerBackLeftWheelTractionForce.points = [ Point(contactPoint_bl_x, 0, contactPoint_bl_z), Point(end_traction_bl_x, 0, end_traction_bl_z) ]
-                markerBackLeftWheelNormalForce.points = [ Point(contactPoint_bl_x, 0, contactPoint_bl_z), Point(end_normal_bl_x, 0, end_normal_bl_z) ]
+                markerBackLeftWheelNormalForce.header.stamp = rospy.Time.now()
+                markerBackLeftWheelTractionForce.header.stamp = rospy.Time.now()
+
+                markerBackLeftWheelTractionForce.points = [ Point(0, 0, 0), Point(traction_bl / (common.niu * normal_bl), 0, 0) ]
+                markerBackLeftWheelNormalForce.points = [ Point(0, 0, 0), Point(0, 0, 1) ]
 
             else:
                 markerBackLeftWheelNormalForce.action = 2
@@ -173,20 +202,14 @@ if __name__ == '__main__':
             
             #   Front left wheel
             if( normal_fl > 1e-3 ):
-                contactPoint_fl_x = common.wheelRadius * math.sin(alpha_fl)
-                contactPoint_fl_z = -common.wheelRadius * math.cos(alpha_fl)
-
-                end_traction_fl_x = contactPoint_fl_x + math.cos(alpha_fl) * traction_fl / (common.niu * normal_fl)
-                end_traction_fl_z = contactPoint_fl_z + math.sin(alpha_fl) * traction_fl / (common.niu * normal_fl)
-
-                end_normal_fl_x = contactPoint_fl_x - math.sin(alpha_fl)
-                end_normal_fl_z = contactPoint_fl_z + math.cos(alpha_fl)
-
-                markerFrontLeftWheelTractionForce.action = 0
                 markerFrontLeftWheelNormalForce.action = 0
+                markerFrontLeftWheelTractionForce.action = 0
 
-                markerFrontLeftWheelTractionForce.points = [ Point(contactPoint_fl_x, 0, contactPoint_fl_z), Point(end_traction_fl_x, 0, end_traction_fl_z) ]
-                markerFrontLeftWheelNormalForce.points = [ Point(contactPoint_fl_x, 0, contactPoint_fl_z), Point(end_normal_fl_x, 0, end_normal_fl_z) ]
+                markerFrontLeftWheelNormalForce.header.stamp = rospy.Time.now()
+                markerFrontLeftWheelTractionForce.header.stamp = rospy.Time.now()
+
+                markerFrontLeftWheelTractionForce.points = [ Point(0, 0, 0), Point(traction_fl / (common.niu * normal_fl), 0, 0) ]
+                markerFrontLeftWheelNormalForce.points = [ Point(0, 0, 0), Point(0, 0, 1) ]
 
             else:
                 markerFrontLeftWheelNormalForce.action = 2
@@ -197,20 +220,14 @@ if __name__ == '__main__':
             
             #   Back right wheel
             if( normal_br > 1e-3 ):
-                contactPoint_br_x = common.wheelRadius * math.sin(alpha_br)
-                contactPoint_br_z = -common.wheelRadius * math.cos(alpha_br)
-            
-                end_traction_br_x = contactPoint_br_x + math.cos(alpha_br) * traction_br / (common.niu * normal_br)
-                end_traction_br_z = contactPoint_br_z + math.sin(alpha_br) * traction_br / (common.niu * normal_br)
-
-                end_normal_br_x = contactPoint_br_x - math.sin(alpha_br)
-                end_normal_br_z = contactPoint_br_z + math.cos(alpha_br)
-
                 markerBackRightWheelTractionForce.action = 0
                 markerBackRightWheelNormalForce.action = 0
 
-                markerBackRightWheelTractionForce.points = [ Point(contactPoint_br_x, 0, contactPoint_br_z), Point(end_traction_br_x, 0, end_traction_br_z) ]
-                markerBackRightWheelNormalForce.points = [ Point(contactPoint_br_x, 0, contactPoint_br_z), Point(end_normal_br_x, 0, end_normal_br_z) ]
+                markerBackRightWheelNormalForce.header.stamp = rospy.Time.now()
+                markerBackRightWheelTractionForce.header.stamp = rospy.Time.now()
+
+                markerBackRightWheelTractionForce.points = [ Point(0, 0, 0), Point(traction_br / (common.niu * normal_br), 0, 0) ]
+                markerBackRightWheelNormalForce.points = [ Point(0, 0, 0), Point(0, 0, 1) ]
 
             else:
                 markerBackRightWheelTractionForce.action = 2
@@ -220,20 +237,14 @@ if __name__ == '__main__':
                 markerBackRightWheelNormalForce.points = []
                 
             if( normal_fr > 1e-3 ):
-                contactPoint_fr_x = common.wheelRadius * math.sin(alpha_fr)
-                contactPoint_fr_z = -common.wheelRadius * math.cos(alpha_fr)
-
-                end_traction_fr_x = contactPoint_fr_x + math.cos(alpha_fr) * traction_fr / (common.niu * normal_fr)
-                end_traction_fr_z = contactPoint_fr_z + math.sin(alpha_fr) * traction_fr / (common.niu * normal_fr)
-
-                end_normal_fr_x = contactPoint_fr_x - math.sin(alpha_fr)
-                end_normal_fr_z = contactPoint_fr_z + math.cos(alpha_fr)
-
                 markerFrontRightWheelTractionForce.action = 0
                 markerFrontRightWheelNormalForce.action = 0
 
-                markerFrontRightWheelTractionForce.points = [ Point(contactPoint_fr_x, 0, contactPoint_fr_z), Point(end_traction_fr_x, 0, end_traction_fr_z) ]
-                markerFrontRightWheelNormalForce.points = [ Point(contactPoint_fr_x, 0, contactPoint_fr_z), Point(end_normal_fr_x, 0, end_normal_fr_z) ]
+                markerFrontRightWheelTractionForce.header.stamp = rospy.Time.now()
+                markerFrontRightWheelNormalForce.header.stamp = rospy.Time.now()
+
+                markerFrontRightWheelTractionForce.points = [ Point(0, 0, 0), Point(traction_fr / (common.niu * normal_fr), 0, 0) ]
+                markerFrontRightWheelNormalForce.points = [ Point(0, 0, 0), Point(0, 0, 1) ]
 
             else:
                 markerFrontRightWheelTractionForce.action = 2
@@ -254,6 +265,6 @@ if __name__ == '__main__':
 
         except(tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             pass
-            print( "[markers.py] Something went wrong!" )
+            print( "[" + rospy.get_name() + "] Something went wrong!" )
 
     rospy.spin()

@@ -25,14 +25,20 @@ find_package(gazebo REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
-  #LIBRARIES nmpc_applications
+  LIBRARIES contacts_plugin
   CATKIN_DEPENDS roscpp rospy std_msgs
 )
 
 include_directories($(Boost_INCLUDE_DIR) ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS})
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME} plugins/contacts.cc)
+add_library(contacts_plugin plugins/contacts.cc)
+add_library(set_force_links_plugin plugins/setForce2Links.cc)
+add_library(get_force_links_plugin plugins/getForce2Links.cc)
+add_library(set_torque_joints_plugin plugins/setTorque2Joints.cc)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+target_link_libraries(contacts_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+target_link_libraries(get_force_links_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+target_link_libraries(set_force_links_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+target_link_libraries(set_torque_joints_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
