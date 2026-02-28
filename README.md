@@ -1,8 +1,8 @@
 # MSc thesis code
 
-This repo contains the code that supports the development of a master thesis on the development of a real-time nonlinear model predictive control based method to safely guide and control a wheeled mobile robot on rough, uneven terrain. Optimal path planning methods are also explored.
+This repo contains the code that supports the development of a master thesis on the development of a **real-time nonlinear model predictive control based method to safely guide and control a wheeled mobile robot on rough, uneven terrain**. **Optimal path planning** methods are also explored.
 
-The [acados](https://github.com/acados/acados) library provided key methods to effectively deliver control algorithms that meet stringent real-time requirements. 
+The [acados](https://github.com/acados/acados) library provided key methods to effectively deliver control algorithms that meet stringent real-time requirements. On the other hand, [CasADi](https://github.com/casadi/casadi) provided efficient symbolic nonlinear constrained optimization methods to generate optimal path planning algorithms.
 
 Python3.8 is the code based language.
 
