@@ -13,12 +13,10 @@ Python3.8 is the code based language.
 ##	Content
 The structure of this repo is similar to a ROS package as the first intention of this work was to make use of ROS-Noetic and Gazebo to output results. Due to infeasibililty of the Gazebo physics-engine to appropriately simulate the traversal of a wheeled mobile robot on rough, rigid terrain, the author resorted to Python simulation in order to achieve the work's main goal. Then, the main code files of the repo are outlined as follows:
 
-1. [Configuration files](https://github.com/fmccastro/nmpc_code/tree/0f28a1b68c4998d8ebb971e4df233e82e0493463/nmpc_applications/config)
+1. [Configuration files](https://github.com/fmccastro/nmpc_code/tree/0f28a1b68c4998d8ebb971e4df233e82e0493463/nmpc_applications/config):
    *These files include the robot specs, the cost function weights, model constraints and solver specs. The obstacles shape file is also defined here.*
    
-2. [nmpc_bringup](https://github.com/fmccastro/nmpc_code/tree/8ab37a864867297aaf7e6ecfd55b73b3ce023acb/nmpc_bringup): location of launch files
-4. [nmpc_description](https://github.com/fmccastro/nmpc_code/tree/8ab37a864867297aaf7e6ecfd55b73b3ce023acb/nmpc_description): location of URDF files that define the mobile robot
-5. [nmpc_gazebo](https://github.com/fmccastro/nmpc_code/tree/8ab37a864867297aaf7e6ecfd55b73b3ce023acb/nmpc_gazebo): location of heightmap files to render in Gazebo 11.
+2. [Simulation scripts]([https://github.com/fmccastro/nmpc_code/tree/8ab37a864867297aaf7e6ecfd55b73b3ce023acb/nmpc_bringup](https://github.com/fmccastro/nmpc_code/tree/c45579955c95297d7a88256a15d47549140c6684/nmpc_applications/scripts): *This folder contains the scripts that yielded the results presented in the thesis. The files with no folder attached generated the optimal path planning results. Then, the folder [Real-time one stage OCP on rough terrain](https://github.com/fmccastro/nmpc_code/tree/c45579955c95297d7a88256a15d47549140c6684/nmpc_applications/scripts/Real-time%20one%20stage%20OCP%20on%20rough%20terrain) contains the scripts that simulate the controller reference tracking on rough terrain with and without obstacles. The folder [Obstacle avoidance](https://github.com/fmccastro/nmpc_code/tree/c45579955c95297d7a88256a15d47549140c6684/nmpc_applications/scripts/Obstacle%20avoidance) contains the test files that generate the artificial potential field and check the proper implementation of the CIAO algorithm.*
 
 ##  Main results (to be updated)
 1. Generation of traversability maps
