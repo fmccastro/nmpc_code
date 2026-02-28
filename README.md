@@ -1,10 +1,14 @@
 # MSc thesis code
 
-This repo contains the code that supports the development of a master thesis on the development of a NMPC based method to control a wheeled mobile robot on unknown environments. The code is based on the intercomunication between ROS (Noetic) nodes. Each node runs a specific task. Python3.8 is the code based language.
+This repo contains the code that supports the development of a master thesis on the development of a real-time nonlinear model predictive control based method to safely guide and control a wheeled mobile robot on rough, uneven terrain. Optimal path planning methods are also explored.
+
+The [acados](https://github.com/acados/acados) library provided key methods to effectively deliver control algorithms that meet stringent real-time requirements. 
+
+Python3.8 is the code based language.
 
 ##	Authors
 1. Francisco Castro
-2. Rodrigo Ventura (supervisor)
+2. Prof. Rodrigo Ventura (supervisor)
 
 ##	Content
 1. [nmpc_applications](https://github.com/fmccastro/nmpc_code/tree/06ed9bd8a37130ad27dbac493a8a8cd28a3f696c/nmpc_applications): location of ROS nodes and python classes
