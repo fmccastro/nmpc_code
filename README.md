@@ -11,12 +11,14 @@ Python3.8 is the code based language.
 2. Prof. Rodrigo Ventura (supervisor)
 
 ##	Content
-The structure of this repo is similar to a ROS package as the first intention of this work was to make use of ROS-Noetic and Gazebo to output results. Due to infeasibililty of the Gazebo physics-engine to appropriately simulate the traversal of a wheeled mobile robot on rough, rigid terrain, the author resorted to Python simulation in order to achieve the work's main goal. Then, the main code files of the repo are outlined below:
+The structure of this repo is similar to a ROS package as the first intention of this work was to make use of ROS-Noetic and Gazebo to output results. Due to infeasibililty of the Gazebo physics-engine to appropriately simulate the traversal of a wheeled mobile robot on rough, rigid terrain, the author resorted to Python simulation in order to achieve the work's main goal. Then, the main code files of the repo are outlined as follows:
 
-1. [nmpc_applications](https://github.com/fmccastro/nmpc_code/tree/06ed9bd8a37130ad27dbac493a8a8cd28a3f696c/nmpc_applications): location of ROS nodes and python classes
+1. [Configuration files](https://github.com/fmccastro/nmpc_code/tree/0f28a1b68c4998d8ebb971e4df233e82e0493463/nmpc_applications/config)
+   *These files include the robot specs, the cost function weights, model constraints and solver specs. The obstacles shape file is also defined here.*
+   
 2. [nmpc_bringup](https://github.com/fmccastro/nmpc_code/tree/8ab37a864867297aaf7e6ecfd55b73b3ce023acb/nmpc_bringup): location of launch files
-3. [nmpc_description](https://github.com/fmccastro/nmpc_code/tree/8ab37a864867297aaf7e6ecfd55b73b3ce023acb/nmpc_description): location of URDF files that define the mobile robot
-4. [nmpc_gazebo](https://github.com/fmccastro/nmpc_code/tree/8ab37a864867297aaf7e6ecfd55b73b3ce023acb/nmpc_gazebo): location of heightmap files to render in Gazebo 11.
+4. [nmpc_description](https://github.com/fmccastro/nmpc_code/tree/8ab37a864867297aaf7e6ecfd55b73b3ce023acb/nmpc_description): location of URDF files that define the mobile robot
+5. [nmpc_gazebo](https://github.com/fmccastro/nmpc_code/tree/8ab37a864867297aaf7e6ecfd55b73b3ce023acb/nmpc_gazebo): location of heightmap files to render in Gazebo 11.
 
 ##  Main results (to be updated)
 1. Generation of traversability maps
