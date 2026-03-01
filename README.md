@@ -20,18 +20,67 @@ The structure of this repo is similar to a ROS package as the first intention of
    
 2. [Simulation scripts](https://github.com/fmccastro/nmpc_code/tree/c45579955c95297d7a88256a15d47549140c6684/nmpc_applications/scripts): *This folder contains the scripts that yielded the results presented in the thesis. The files with no folder attached generated the optimal path planning results. Then, the folder [Real-time one stage OCP on rough terrain](https://github.com/fmccastro/nmpc_code/tree/c45579955c95297d7a88256a15d47549140c6684/nmpc_applications/scripts/Real-time%20one%20stage%20OCP%20on%20rough%20terrain) contains the scripts that simulate the controller reference tracking on rough terrain with and without obstacles. The folder [Obstacle avoidance](https://github.com/fmccastro/nmpc_code/tree/c45579955c95297d7a88256a15d47549140c6684/nmpc_applications/scripts/Obstacle%20avoidance) contains the test files that generate the artificial potential field and check the proper implementation of the [CIAO](https://ieeexplore.ieee.org/abstract/document/9197206) algorithm.*
 
-3. [Classes](https://github.com/fmccastro/nmpc_code/tree/2c90244cca1f40b8f738b991e24b3a8614588505/nmpc_applications/src/classes): *This folder contains the methods that each script calls to properly output trustworthy results. The source code of the algorithms developed in this thesis is located here.* 
+3. [Classes](https://github.com/fmccastro/nmpc_code/tree/2c90244cca1f40b8f738b991e24b3a8614588505/nmpc_applications/src/classes): *This folder contains the methods that each script calls to properly output trustworthy results. The source code of the algorithms developed in this thesis is located here.*
 
 ##  Main results
 
+### Optimal path planning
+
 1. Generation of traversability maps
-![Example of traversability map generated with optimization methods (namely ipopt).](https://github.com/fmccastro/mscthesis_pdf/blob/7b91f8b9ee3b3ccbd17daf7faa5a1f8c68620eb5/Figures/mapRefinement%2BPoints%2B0.9%2B0.2%2B1.png)
+
+<div align="center">
+	<table>
+		<tr>
+	    	<td valign="middle">
+				<b>Height minimization nonlinear program</b>
+				<p></p>
+				<table>
+				  <tr>
+				    <td style="text-align: right; padding-right: 10px;">
+						Minimize
+					</td>
+				    <td>$$J = z$$</td>
+				  </tr>
+				  <tr>
+				    <td style="text-align: right; padding-right: 10px;">
+						w.r.t
+					</td>
+				    <td>$$\mathbf{w} = (z, \phi, \theta)$$</td>
+				  </tr>
+				  <tr>
+				    <td style="text-align: right; padding-right: 10px;">
+						subject to
+					</td>
+				    <td>$$\forall_k: z_k - h \left( x_k, y_k \right) \ge 0$$</td>
+				  </tr>
+				  <tr>
+				    <td></td>
+				    <td>$$\mathbf{\Psi}_{\max} - \left|\mathbf{\Psi}\right| \ge 0$$</td>
+				  </tr>
+				</table>
+				<p></p>
+				<p></p>
+				<b>Terrain roughness computation</b>
+				<p></p>
+				$$\bar{h}_d \left( i, j \right) = \frac{ \sum_{ x_i,\,y_j \in \mathcal{H}_2 } h \left( x_i, \, y_j \right) }{ n \left( \underline{ \mathcal{H} }_2 \right) },\; \underline{\mathcal{H}}_2 :=  \forall \left( x_i,\, y_j \right) \in \mathcal{H}_2$$
+				<p></p>
+				$$\sqrt{ \frac{ \sum_{ x_i, y_j \in \mathcal{H}_2 } \left( h_d \left( i,\,j \right) - \bar{h}_d \left( i, j \right) \right)^2 }{ n \left( \underline{ \mathcal{H} }_2 \right) } }$$
+			</td>
+	  		<td>
+				Refined worst-case traversability map example
+	    		<img src="https://github.com/fmccastro/mscthesis_pdf/blob/7b91f8b9ee3b3ccbd17daf7faa5a1f8c68620eb5/Figures/mapRefinement%2BPoints%2B0.9%2B0.2%2B1.png" width="500">
+	  		</td>
+		</tr>
+	</table>
+</div>
 
 2. Generation of potential flows by applying the Eikonal equation (solution computed with ![skfmm](https://github.com/scikit-fmm/scikit-fmm.git))
 
 	-![Example of potential flow generated with the Eikonal equation.](https://github.com/fmccastro/mscthesis_pdf/blob/7b91f8b9ee3b3ccbd17daf7faa5a1f8c68620eb5/Figures/potentialFlow%2BmapRefinement%2BPoints%2B0.9%2B0.2.pdf)
 
 	-![Comparison among paths generated with different types of maps.](https://github.com/fmccastro/mscthesis_pdf/blob/7b91f8b9ee3b3ccbd17daf7faa5a1f8c68620eb5/Figures/comparisonOfPaths.pdf)
+
+### Real-time safe nonlinear optimal control of a mobile robot on rough terrain
 
 ##	Teleoperation node
 A teleoperation node for the [mobile robot](https://github.com/fmccastro/nmpc_code/blob/ab60baa7eb3b822d2609c6c4235bec53f61a5c24/nmpc_description/robots/pioneer3at/urdf/pioneer3at.urdf) is coded [here](https://github.com/fmccastro/nmpc_code/blob/913261a1084ce2b29de2d6007a0622224d8becd1/nmpc_applications/src/mouse_joy_wheelTorques.py). You can take the code and adjust to your needs. This approach allows you to easily teleoperate a wheeled mobile robot from a PyGame GUI by mouse control, resembling a joystick.
