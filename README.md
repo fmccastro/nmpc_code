@@ -4,6 +4,8 @@ This repo contains the code that supports the development of a master thesis on 
 
 The [acados](https://github.com/acados/acados) library provided key methods to effectively deliver control algorithms that meet stringent real-time requirements. On the other hand, [CasADi](https://github.com/casadi/casadi) provided efficient symbolic nonlinear constrained optimization methods to generate optimal path planning algorithms.
 
+The full thesis document can be found [here](https://github.com/fmccastro/mscthesis_pdf/blob/22f496074fc8c4963af305fde6342fcd7fdb02b9/Thesis.pdf).
+
 `Python3.8` is the code based language.
 
 ##	Authors
