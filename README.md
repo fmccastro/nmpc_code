@@ -21,6 +21,11 @@ The structure of this repo is similar to a ROS package as the first intention of
 3. [Classes](https://github.com/fmccastro/nmpc_code/tree/2c90244cca1f40b8f738b991e24b3a8614588505/nmpc_applications/src/classes): *This folder contains the methods that each script calls to properly output trustworthy results. The source code of the algorithms developed in this thesis is located here.* 
 
 ##  Main results
+
+$$
+a=b
+$$
+
 1. Generation of traversability maps
 ![Example of traversability map generated with optimization methods (namely ipopt).](https://github.com/fmccastro/mscthesis_pdf/blob/7b91f8b9ee3b3ccbd17daf7faa5a1f8c68620eb5/Figures/mapRefinement%2BPoints%2B0.9%2B0.2%2B1.png)
 
