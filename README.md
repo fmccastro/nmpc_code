@@ -22,11 +22,7 @@ The structure of this repo is similar to a ROS package as the first intention of
 
 ##  Main results
 
-$$
-a=b
-$$
-
-1. Generation of traversability maps
+$$a=b$$ 1. Generation of traversability maps
 ![Example of traversability map generated with optimization methods (namely ipopt).](https://github.com/fmccastro/mscthesis_pdf/blob/7b91f8b9ee3b3ccbd17daf7faa5a1f8c68620eb5/Figures/mapRefinement%2BPoints%2B0.9%2B0.2%2B1.png)
 
 2. Generation of potential flows by applying the Eikonal equation (solution computed with ![skfmm](https://github.com/scikit-fmm/scikit-fmm.git))
